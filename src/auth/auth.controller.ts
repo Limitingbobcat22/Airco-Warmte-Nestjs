@@ -18,8 +18,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  @ApiOperation({ summary: 'Inloggen als admin (geen registratie)' })
-  @ApiOkResponse({ description: 'JWT access token' })
+  @ApiOperation({ summary: 'Inloggen (geen registratie)' })
+  @ApiOkResponse({ description: 'JWT access token + user' })
   @ApiUnauthorizedResponse({ description: 'Ongeldige inloggegevens' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -28,7 +28,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Huidige admin, vereist Bearer token' })
+  @ApiOperation({ summary: 'Huidige gebruiker, vereist Bearer token' })
   @ApiUnauthorizedResponse({ description: 'Geen of ongeldig token' })
   me(@CurrentUser() user: JwtPayload) {
     return user;

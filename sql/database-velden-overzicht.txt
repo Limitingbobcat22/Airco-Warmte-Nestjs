@@ -1,0 +1,106 @@
+Database-overzicht Airco & Warmte
+Database: aircoenwarmte
+Gecontroleerd: 26 augustus 2026
+
+Status controle
+- Tabellen aanwezig: aircos, airco_images, users
+- Oude tabel airco_capacities: NIET meer aanwezig (correct)
+- Oude velden size_code en cooling_kw: NIET meer aanwezig (correct)
+- Nieuwe velden cooling_kw_min en cooling_kw_max: aanwezig (correct)
+- Relatie: airco_images.airco_id -> aircos.id (cascade bij verwijderen)
+- Max. 3 foto's per airco via unieke combinatie airco_id + sort_order (0, 1 of 2)
+
+
+================================================================================
+TABEL: aircos
+Doel: productgegevens van elk airco-model
+================================================================================
+
+Veld                     Type              Verplicht   Uitleg / voorbeeld
+-----------------------  ----------------  ----------  ----------------------------------------------
+id                       char(36)          ja          Unieke ID (UUID)
+slug                     varchar(120)      ja          Unieke korte naam, bijv. haier-revive
+brand                    varchar(80)       ja          Merk, bijv. Haier
+series                   varchar(80)       ja          Serie, bijv. Revive
+model                    varchar(80)       ja          Kort model, bijv. Wandmodel
+unit_type                varchar(80)       ja          Type in specs, bijv. Wandmodel (split)
+tag                      varchar(120)      ja          Korte labeltekst, bijv. Voordelig & Efficient
+description              text              ja          Productbeschrijving
+product_function         varchar(80)       ja          Functie, bijv. Koelen en verwarmen
+features                 json              ja          Lijst met USP's / kenmerken
+trust_points             json              ja          Trust-regels (montage, F-gassen, etc.)
+cooling_kw_min           decimal(4,1)      ja          Minimaal koelvermogen in kW, bijv. 2.7
+cooling_kw_max           decimal(4,1)      ja          Maximaal koelvermogen in kW, bijv. 6.2
+heating_kw               decimal(4,1)      ja          Verwarmingsvermogen in kW (bij max.)
+seer                     decimal(4,2)      ja          SEER, bijv. 6.10
+scop                     decimal(4,2)      ja          SCOP, bijv. 4.00
+energy_class_cooling     varchar(8)        ja          Energielabel koelen, bijv. A++
+energy_class_heating     varchar(8)        ja          Energielabel verwarmen, bijv. A+
+noise_silent_dba         int               ja          Geluid binnenunit vanaf X dB(A)
+min_temp_c               int               ja          Werkt tot X °C, bijv. -20
+refrigerant              varchar(16)       ja          Koudemiddel, standaard R32
+room_m2                  varchar(40)       ja          Geschikte ruimte, bijv. tot 40 m²
+heating_coverage         decimal(3,2)      ja          Interne factor voor berekeningen
+price_eur                decimal(10,2)     ja          Prijs vanaf in euro's, bijv. 1890.00
+accent                   varchar(16)       ja          UI-kleurcode, standaard #005A9C
+created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
+updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
+
+Uniek: slug
+
+
+================================================================================
+TABEL: airco_images
+Doel: maximaal 3 foto's per airco (bytes in database)
+================================================================================
+
+Veld                     Type              Verplicht   Uitleg / voorbeeld
+-----------------------  ----------------  ----------  ----------------------------------------------
+id                       char(36)          ja          Unieke ID van de foto (UUID)
+airco_id                 char(36)          ja          Koppeling naar aircos.id
+sort_order               tinyint           ja          Slot 0, 1 of 2 (max. 3 foto's)
+label                    varchar(80)       ja          Bijv. Vooraanzicht / Schuin aanzicht / Detail
+mime_type                varchar(80)       ja          Bijv. image/jpeg of image/png
+original_filename        varchar(255)      ja          Originele bestandsnaam bij upload
+data                     longblob          ja          De afbeeldingsbytes zelf
+
+Uniek: combinatie airco_id + sort_order
+Relatie: airco_id verwijst naar aircos.id
+
+
+================================================================================
+TABEL: users
+Doel: inloggen / admin-gebruikers
+================================================================================
+
+Veld                     Type              Verplicht   Uitleg / voorbeeld
+-----------------------  ----------------  ----------  ----------------------------------------------
+id                       char(36)          ja          Unieke ID (UUID)
+email                    varchar(255)      ja          Login-e-mail (uniek)
+password_hash            varchar(255)      ja          Gehashte wachtwoordwaarde
+is_admin                 tinyint(1)        ja          1 = admin, 0 = geen admin (standaard 0)
+created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
+updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
+
+Uniek: email
+
+
+================================================================================
+Korte werking (voor de klant)
+================================================================================
+
+1. Elk airco-model staat in "aircos" met alle teksten, specs en prijs.
+2. Vermogen is een bereik: cooling_kw_min tot cooling_kw_max.
+3. Fit-check en besparingsberekening gebruiken het maximale koelvermogen.
+4. Per airco kunnen maximaal 3 foto's in "airco_images".
+5. Admins kunnen inloggen via "users".
+
+Voorbeeld Revive:
+- brand: Haier
+- series: Revive
+- cooling_kw_min: 2.7
+- cooling_kw_max: 6.2
+- heating_kw: 6.3
+- price_eur: 1890.00
+- features: lijst met USP's
+- foto's: tot 3 stuks in airco_images

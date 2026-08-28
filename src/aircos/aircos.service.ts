@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -50,7 +49,7 @@ export class AircosService {
   async findAll(): Promise<AircoResponse[]> {
     const rows = await this.aircos.find({
       relations: { images: true },
-      order: { brand: 'ASC', series: 'ASC' },
+      order: { brand: 'ASC', model: 'ASC' },
     });
     return rows.map((row) => this.toResponse(row));
   }
@@ -61,15 +60,9 @@ export class AircosService {
   }
 
   async create(dto: CreateAircoDto): Promise<AircoResponse> {
-    const slug = await this.ensureUniqueSlug(
-      dto.slug?.trim() || this.slugify(dto.brand, dto.series),
-    );
-
     const airco = this.aircos.create({
       id: randomUUID(),
-      slug,
       brand: dto.brand.trim(),
-      series: dto.series.trim(),
       model: dto.model.trim(),
       unitType: (dto.unitType ?? `${dto.model.trim()} (split)`).trim(),
       tag: dto.tag?.trim() ?? '',
@@ -82,7 +75,10 @@ export class AircosService {
       scop: dto.scop,
       energyClassCooling: dto.energyClassCooling,
       energyClassHeating: dto.energyClassHeating,
-      noiseSilentDba: dto.noiseSilentDba,
+      noiseDbaInside: dto.noiseDbaInside,
+      noiseDbaOutside: dto.noiseDbaOutside,
+      netSizeInside: dto.netSizeInside?.trim() ?? '',
+      netSizeOutside: dto.netSizeOutside?.trim() ?? '',
       refrigerant: dto.refrigerant ?? 'R32',
       roomM2: dto.roomM2.trim(),
       heatingCoverage: dto.heatingCoverage ?? 0.55,
@@ -97,12 +93,7 @@ export class AircosService {
   async update(id: string, dto: UpdateAircoDto): Promise<AircoResponse> {
     const airco = await this.loadAirco(id);
 
-    if (dto.slug && dto.slug.trim() !== airco.slug) {
-      airco.slug = await this.ensureUniqueSlug(dto.slug.trim(), airco.id);
-    }
-
     if (dto.brand != null) airco.brand = dto.brand.trim();
-    if (dto.series != null) airco.series = dto.series.trim();
     if (dto.model != null) airco.model = dto.model.trim();
     if (dto.unitType != null) airco.unitType = dto.unitType.trim();
     if (dto.tag != null) airco.tag = dto.tag.trim();
@@ -121,7 +112,12 @@ export class AircosService {
     if (dto.energyClassHeating != null) {
       airco.energyClassHeating = dto.energyClassHeating;
     }
-    if (dto.noiseSilentDba != null) airco.noiseSilentDba = dto.noiseSilentDba;
+    if (dto.noiseDbaInside != null) airco.noiseDbaInside = dto.noiseDbaInside;
+    if (dto.noiseDbaOutside != null) airco.noiseDbaOutside = dto.noiseDbaOutside;
+    if (dto.netSizeInside != null) airco.netSizeInside = dto.netSizeInside.trim();
+    if (dto.netSizeOutside != null) {
+      airco.netSizeOutside = dto.netSizeOutside.trim();
+    }
     if (dto.refrigerant != null) airco.refrigerant = dto.refrigerant;
     if (dto.roomM2 != null) airco.roomM2 = dto.roomM2.trim();
     if (dto.heatingCoverage != null) {
@@ -225,26 +221,6 @@ export class AircosService {
       throw new NotFoundException('Airco niet gevonden.');
     }
     return airco;
-  }
-
-  private async ensureUniqueSlug(
-    slug: string,
-    exceptId?: string,
-  ): Promise<string> {
-    const existing = await this.aircos.findOne({ where: { slug } });
-    if (existing && existing.id !== exceptId) {
-      throw new ConflictException(`Slug "${slug}" is al in gebruik.`);
-    }
-    return slug;
-  }
-
-  private slugify(brand: string, series: string): string {
-    return `${brand}-${series}`
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{M}/gu, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
   }
 
   private toResponse(airco: Airco): AircoResponse {

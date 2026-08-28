@@ -19,9 +19,7 @@ Doel: productgegevens van elk airco-model
 Veld                     Type              Verplicht   Uitleg / voorbeeld
 -----------------------  ----------------  ----------  ----------------------------------------------
 id                       char(36)          ja          Unieke ID (UUID)
-slug                     varchar(120)      ja          Unieke korte naam, bijv. haier-revive
 brand                    varchar(80)       ja          Merk, bijv. Haier
-series                   varchar(80)       ja          Serie, bijv. Revive
 model                    varchar(80)       ja          Kort model, bijv. Wandmodel
 unit_type                varchar(80)       ja          Type in specs, bijv. Wandmodel (split)
 tag                      varchar(120)      ja          Korte labeltekst, bijv. Voordelig & Efficient
@@ -36,7 +34,10 @@ seer                     decimal(4,2)      ja          SEER, bijv. 6.10
 scop                     decimal(4,2)      ja          SCOP, bijv. 4.00
 energy_class_cooling     varchar(8)        ja          Energielabel koelen, bijv. A++
 energy_class_heating     varchar(8)        ja          Energielabel verwarmen, bijv. A+
-noise_silent_dba         int               ja          Geluid binnenunit vanaf X dB(A)
+noise_dba_inside         int               ja          Geluid binnenunit vanaf X dB(A)
+noise_dba_outside        int               ja          Geluid buitenunit vanaf X dB(A)
+net_size_inside          varchar(80)       ja          Netto afmeting binnenunit, bijv. 295 × 858 × 187 mm
+net_size_outside         varchar(80)       ja          Netto afmeting buitenunit, bijv. 700 × 870 × 320 mm
 min_temp_c               int               ja          Werkt tot X °C, bijv. -20
 refrigerant              varchar(16)       ja          Koudemiddel, standaard R32
 room_m2                  varchar(40)       ja          Geschikte ruimte, bijv. tot 40 m²
@@ -46,7 +47,7 @@ accent                   varchar(16)       ja          UI-kleurcode, standaard #
 created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
 updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
 
-Uniek: slug
+Uniek: id
 
 
 ================================================================================
@@ -97,7 +98,7 @@ Korte werking (voor de klant)
 
 Voorbeeld Revive:
 - brand: Haier
-- series: Revive
+- model: Wandmodel
 - cooling_kw_min: 2.7
 - cooling_kw_max: 6.2
 - heating_kw: 6.3

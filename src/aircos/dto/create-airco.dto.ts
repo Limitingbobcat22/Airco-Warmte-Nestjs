@@ -11,21 +11,10 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAircoDto {
-  @ApiPropertyOptional({ example: 'haier-revive' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(120)
-  slug?: string;
-
   @ApiProperty({ example: 'Haier' })
   @IsString()
   @MaxLength(80)
   brand!: string;
-
-  @ApiProperty({ example: 'Revive' })
-  @IsString()
-  @MaxLength(80)
-  series!: string;
 
   @ApiProperty({ example: 'Wandmodel' })
   @IsString()
@@ -101,7 +90,23 @@ export class CreateAircoDto {
 
   @ApiProperty({ example: 19 })
   @IsInt()
-  noiseSilentDba!: number;
+  noiseDbaInside!: number;
+
+  @ApiProperty({ example: 48 })
+  @IsInt()
+  noiseDbaOutside!: number;
+
+  @ApiPropertyOptional({ example: '295 × 858 × 187 mm' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  netSizeInside?: string;
+
+  @ApiPropertyOptional({ example: '700 × 870 × 320 mm' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  netSizeOutside?: string;
 
   @ApiPropertyOptional({ example: 'R32' })
   @IsOptional()

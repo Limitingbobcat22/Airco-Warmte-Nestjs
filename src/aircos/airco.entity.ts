@@ -14,14 +14,8 @@ export class Airco {
   @PrimaryColumn({ type: 'char', length: 36 })
   id!: string;
 
-  @Column({ type: 'varchar', length: 120, unique: true })
-  slug!: string;
-
   @Column({ type: 'varchar', length: 80 })
   brand!: string;
-
-  @Column({ type: 'varchar', length: 80 })
-  series!: string;
 
   /** Kort model, bijv. Wandmodel of MSZ-LN. */
   @Column({ type: 'varchar', length: 80 })
@@ -84,8 +78,17 @@ export class Airco {
   @Column({ name: 'energy_class_heating', type: 'varchar', length: 8 })
   energyClassHeating!: string;
 
-  @Column({ name: 'noise_silent_dba', type: 'int' })
-  noiseSilentDba!: number;
+  @Column({ name: 'noise_dba_inside', type: 'int' })
+  noiseDbaInside!: number;
+
+  @Column({ name: 'noise_dba_outside', type: 'int' })
+  noiseDbaOutside!: number;
+
+  @Column({ name: 'net_size_inside', type: 'varchar', length: 80, default: '' })
+  netSizeInside!: string;
+
+  @Column({ name: 'net_size_outside', type: 'varchar', length: 80, default: '' })
+  netSizeOutside!: string;
 
   @Column({ type: 'varchar', length: 16, default: 'R32' })
   refrigerant!: string;

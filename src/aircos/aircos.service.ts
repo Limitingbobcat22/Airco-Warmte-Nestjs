@@ -132,7 +132,10 @@ export class AircosService {
 
   async remove(id: string): Promise<void> {
     const airco = await this.loadAirco(id);
-    await this.aircos.remove(airco);
+    await this.aircos.manager.transaction(async (manager) => {
+      await manager.delete(AircoImage, { aircoId: airco.id });
+      await manager.delete(Airco, { id: airco.id });
+    });
   }
 
   async uploadImage(

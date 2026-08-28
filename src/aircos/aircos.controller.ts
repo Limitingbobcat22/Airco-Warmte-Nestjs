@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -35,6 +36,7 @@ import { UpdateAircoDto } from './dto/update-airco.dto';
 import type { UploadedFilePayload } from './uploaded-file';
 
 const IMAGE_UPLOAD = {
+  storage: memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (
     _req: unknown,

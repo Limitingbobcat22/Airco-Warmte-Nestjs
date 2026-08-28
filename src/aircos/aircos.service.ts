@@ -61,8 +61,6 @@ export class AircosService {
   }
 
   async create(dto: CreateAircoDto): Promise<AircoResponse> {
-    this.assertCoolingRange(dto.coolingKwMin, dto.coolingKwMax);
-
     const slug = await this.ensureUniqueSlug(
       dto.slug?.trim() || this.slugify(dto.brand, dto.series),
     );
@@ -77,17 +75,14 @@ export class AircosService {
       tag: dto.tag?.trim() ?? '',
       description: dto.description.trim(),
       productFunction: dto.productFunction?.trim() ?? 'Koelen en verwarmen',
-      features: dto.features,
       trustPoints: dto.trustPoints ?? DEFAULT_TRUST_POINTS,
-      coolingKwMin: dto.coolingKwMin,
-      coolingKwMax: dto.coolingKwMax,
+      coolingKw: dto.coolingKw,
       heatingKw: dto.heatingKw,
       seer: dto.seer,
       scop: dto.scop,
       energyClassCooling: dto.energyClassCooling,
       energyClassHeating: dto.energyClassHeating,
       noiseSilentDba: dto.noiseSilentDba,
-      minTempC: dto.minTempC,
       refrigerant: dto.refrigerant ?? 'R32',
       roomM2: dto.roomM2.trim(),
       heatingCoverage: dto.heatingCoverage ?? 0.55,
@@ -115,10 +110,8 @@ export class AircosService {
     if (dto.productFunction != null) {
       airco.productFunction = dto.productFunction.trim();
     }
-    if (dto.features != null) airco.features = dto.features;
     if (dto.trustPoints != null) airco.trustPoints = dto.trustPoints;
-    if (dto.coolingKwMin != null) airco.coolingKwMin = dto.coolingKwMin;
-    if (dto.coolingKwMax != null) airco.coolingKwMax = dto.coolingKwMax;
+    if (dto.coolingKw != null) airco.coolingKw = dto.coolingKw;
     if (dto.heatingKw != null) airco.heatingKw = dto.heatingKw;
     if (dto.seer != null) airco.seer = dto.seer;
     if (dto.scop != null) airco.scop = dto.scop;
@@ -129,7 +122,6 @@ export class AircosService {
       airco.energyClassHeating = dto.energyClassHeating;
     }
     if (dto.noiseSilentDba != null) airco.noiseSilentDba = dto.noiseSilentDba;
-    if (dto.minTempC != null) airco.minTempC = dto.minTempC;
     if (dto.refrigerant != null) airco.refrigerant = dto.refrigerant;
     if (dto.roomM2 != null) airco.roomM2 = dto.roomM2.trim();
     if (dto.heatingCoverage != null) {
@@ -137,8 +129,6 @@ export class AircosService {
     }
     if (dto.priceEur != null) airco.priceEur = dto.priceEur;
     if (dto.accent != null) airco.accent = dto.accent;
-
-    this.assertCoolingRange(airco.coolingKwMin, airco.coolingKwMax);
 
     await this.aircos.save(airco);
     return this.findOne(airco.id);
@@ -224,14 +214,6 @@ export class AircosService {
       throw new NotFoundException('Foto niet gevonden.');
     }
     return image;
-  }
-
-  private assertCoolingRange(min: number, max: number): void {
-    if (min > max) {
-      throw new BadRequestException(
-        'coolingKwMin mag niet groter zijn dan coolingKwMax.',
-      );
-    }
   }
 
   private async loadAirco(id: string): Promise<Airco> {

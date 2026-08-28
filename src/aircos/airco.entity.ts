@@ -41,29 +41,17 @@ export class Airco {
   @Column({ name: 'product_function', type: 'varchar', length: 80 })
   productFunction!: string;
 
-  @Column({ type: 'json' })
-  features!: string[];
-
   @Column({ name: 'trust_points', type: 'json' })
   trustPoints!: string[];
 
   @Column({
-    name: 'cooling_kw_min',
+    name: 'cooling_kw',
     type: 'decimal',
     precision: 4,
     scale: 1,
     transformer: decimalTransformer,
   })
-  coolingKwMin!: number;
-
-  @Column({
-    name: 'cooling_kw_max',
-    type: 'decimal',
-    precision: 4,
-    scale: 1,
-    transformer: decimalTransformer,
-  })
-  coolingKwMax!: number;
+  coolingKw!: number;
 
   @Column({
     name: 'heating_kw',
@@ -98,9 +86,6 @@ export class Airco {
 
   @Column({ name: 'noise_silent_dba', type: 'int' })
   noiseSilentDba!: number;
-
-  @Column({ name: 'min_temp_c', type: 'int' })
-  minTempC!: number;
 
   @Column({ type: 'varchar', length: 16, default: 'R32' })
   refrigerant!: string;

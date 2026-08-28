@@ -57,19 +57,6 @@ export class CreateAircoDto {
   @MaxLength(80)
   productFunction?: string;
 
-  @ApiProperty({
-    type: [String],
-    example: [
-      'Energielabel A++ / A+',
-      'Snelle koeling & verwarming',
-      'hOn Smart App bediening',
-      'Eenvoudig onderhoud',
-    ],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  features!: string[];
-
   @ApiPropertyOptional({
     type: [String],
     example: [
@@ -82,15 +69,10 @@ export class CreateAircoDto {
   @IsString({ each: true })
   trustPoints?: string[];
 
-  @ApiProperty({ example: 2.7 })
-  @IsNumber()
-  @Min(0)
-  coolingKwMin!: number;
-
   @ApiProperty({ example: 6.2 })
   @IsNumber()
   @Min(0)
-  coolingKwMax!: number;
+  coolingKw!: number;
 
   @ApiProperty({ example: 3.9 })
   @IsNumber()
@@ -120,10 +102,6 @@ export class CreateAircoDto {
   @ApiProperty({ example: 19 })
   @IsInt()
   noiseSilentDba!: number;
-
-  @ApiProperty({ example: -20 })
-  @IsInt()
-  minTempC!: number;
 
   @ApiPropertyOptional({ example: 'R32' })
   @IsOptional()

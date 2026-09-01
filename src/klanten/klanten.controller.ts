@@ -32,7 +32,7 @@ export class KlantenController {
 
   @Post()
   @ApiOperation({
-    summary: 'Klant / offerteaanvraag aanmaken (publiek)',
+    summary: 'Klant aanmaken (publiek). Bij gekozen airco wordt intern een offerte aangemaakt.',
   })
   @ApiCreatedResponse({ description: 'Klant aangemaakt' })
   create(@Body() dto: CreateKlantDto) {

@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AircosModule } from './aircos/aircos.module';
 import { AuthModule } from './auth/auth.module';
 import { KlantenModule } from './klanten/klanten.module';
+import { OffertesModule } from './offertes/offertes.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { KlantenModule } from './klanten/klanten.module';
     AuthModule,
     AircosModule,
     KlantenModule,
+    OffertesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

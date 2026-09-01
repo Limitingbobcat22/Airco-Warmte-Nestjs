@@ -1,0 +1,56 @@
+-- View: offerte + klant + airco + berekend jaarvoordeel.
+-- Alleen voor lezen (GET). Writes gaan via tabel offertes.
+-- De API maakt/ververst deze view ook bij opstarten.
+
+CREATE OR REPLACE VIEW offerte_overzicht AS
+SELECT
+  o.id,
+  o.klant_id,
+  o.airco_id,
+  o.area_m2,
+  o.height_m,
+  o.heating_share_pct,
+  o.required_kw,
+  o.yearly_gas_m3,
+  o.gas_price_eur,
+  o.elec_price_eur,
+  o.net_euro_saved_yearly,
+  o.created_at,
+  o.updated_at,
+  k.first_name AS klant_first_name,
+  k.last_name AS klant_last_name,
+  k.email AS klant_email,
+  k.phone AS klant_phone,
+  k.street AS klant_street,
+  k.house_number AS klant_house_number,
+  k.postal_code AS klant_postal_code,
+  k.city AS klant_city,
+  k.note AS klant_note,
+  k.consent_contact AS klant_consent_contact,
+  k.created_at AS klant_created_at,
+  k.updated_at AS klant_updated_at,
+  a.brand AS airco_brand,
+  a.model AS airco_model,
+  a.unit_type AS airco_unit_type,
+  a.tag AS airco_tag,
+  a.description AS airco_description,
+  a.product_function AS airco_product_function,
+  a.trust_points AS airco_trust_points,
+  a.cooling_kw AS airco_cooling_kw,
+  a.heating_kw AS airco_heating_kw,
+  a.seer AS airco_seer,
+  a.scop AS airco_scop,
+  a.energy_class_cooling AS airco_energy_class_cooling,
+  a.energy_class_heating AS airco_energy_class_heating,
+  a.noise_dba_inside AS airco_noise_dba_inside,
+  a.noise_dba_outside AS airco_noise_dba_outside,
+  a.net_size_inside AS airco_net_size_inside,
+  a.net_size_outside AS airco_net_size_outside,
+  a.refrigerant AS airco_refrigerant,
+  a.room_m2 AS airco_room_m2,
+  a.heating_coverage AS airco_heating_coverage,
+  a.price_eur AS airco_price_eur,
+  a.accent AS airco_accent
+FROM offertes o
+LEFT JOIN klanten k ON k.id = o.klant_id
+LEFT JOIN aircos a ON a.id = o.airco_id;

@@ -3,12 +3,14 @@ Database: aircoenwarmte
 Gecontroleerd: 26 augustus 2026
 
 Status controle
-- Tabellen aanwezig: aircos, airco_images, users, klanten
+- Tabellen aanwezig: aircos, airco_images, users, klanten, offertes
+- View aanwezig: offerte_overzicht (offerte + klant + airco + jaarvoordeel, alleen lezen)
 - Oude tabel airco_capacities: NIET meer aanwezig (correct)
 - Oude velden size_code en cooling_kw: NIET meer aanwezig (correct)
 - Nieuwe velden cooling_kw_min en cooling_kw_max: aanwezig (correct)
 - Relatie: airco_images.airco_id -> aircos.id (cascade bij verwijderen)
-- Relatie: klanten.airco_id -> aircos.id (SET NULL bij verwijderen van de airco)
+- Relatie: offertes.klant_id -> klanten.id (SET NULL bij verwijderen van de klant)
+- Relatie: offertes.airco_id -> aircos.id (SET NULL bij verwijderen van de airco)
 - Max. 3 foto's per airco via unieke combinatie airco_id + sort_order (0, 1 of 2)
 
 
@@ -89,7 +91,7 @@ Uniek: email
 
 ================================================================================
 TABEL: klanten
-Doel: NAW-gegevens van offerteaanvragen (popup)
+Doel: NAW-gegevens van klanten
 ================================================================================
 
 Veld                     Type              Verplicht   Uitleg / voorbeeld
@@ -105,17 +107,62 @@ postal_code              varchar(10)       ja          Nederlandse postcode, bij
 city                     varchar(80)       ja          Woonplaats
 note                     text              nee         Vrije opmerking
 consent_contact          tinyint(1)        ja          1 = toestemming voor contact (verplicht bij create)
-airco_id                 char(36)          nee         Koppeling naar aircos.id (SET NULL bij delete)
-airco_label              varchar(160)      nee         Snapshot merk + model, bijv. Haier Wandmodel
-cooling_kw               decimal(4,1)      nee         Snapshot koelvermogen van de aanvraag
-heating_kw               decimal(4,1)      nee         Snapshot verwarmingsvermogen
-net_euro_saved_yearly    decimal(10,2)     nee         Snapshot geschat jaarvoordeel
 created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
 updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
 
 Uniek: id
 Index: email, created_at
-Relatie: airco_id verwijst naar aircos.id (optioneel)
+
+
+================================================================================
+TABEL: offertes
+Doel: offerteaanvraag (alleen admin-CRUD). Klant- en aircodata via IDs.
+================================================================================
+
+Veld                     Type              Verplicht   Uitleg / voorbeeld
+-----------------------  ----------------  ----------  ----------------------------------------------
+id                       char(36)          ja          Unieke ID (UUID)
+klant_id                 char(36)          nee         Koppeling naar klanten.id (SET NULL bij delete)
+airco_id                 char(36)          nee         Koppeling naar aircos.id (SET NULL bij delete)
+area_m2                  decimal(6,1)      nee         Oppervlakte ruimte (m²), ingevuld door de gebruiker
+height_m                 decimal(3,1)      nee         Hoogte ruimte (meter)
+heating_share_pct        decimal(5,1)      nee         Deel van de woning verwarmd via airco (%)
+required_kw              decimal(4,1)      nee         Aanbevolen vermogen (kW)
+yearly_gas_m3            decimal(8,1)      nee         Jaarlijks gasverbruik (m³)
+gas_price_eur            decimal(6,2)      nee         Huidige gasprijs (€ per m³)
+elec_price_eur           decimal(6,2)      nee         Huidige stroomprijs (€ per kWh)
+net_euro_saved_yearly    decimal(10,2)     nee         Geschat jaarvoordeel, berekend in de frontend
+created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
+updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
+
+Uniek: id
+Index: klant_id, airco_id, created_at
+Relatie: klant_id -> klanten.id, airco_id -> aircos.id
+Klant-NAW en airco-specs worden niet gedupliceerd.
+GET /offertes leest de view offerte_overzicht (join van offertes + klanten + aircos).
+
+
+================================================================================
+VIEW: offerte_overzicht
+Doel: leesweergave voor GET /offertes: offerte + volledige klant + airco + jaarvoordeel
+================================================================================
+
+Bronnen: offertes o LEFT JOIN klanten k LEFT JOIN aircos a
+Schrijven (POST/PATCH/DELETE) gaat via tabel offertes, niet via deze view.
+
+Veld                         Bron
+---------------------------  --------------------------------------------------
+id, klant_id, airco_id       offertes
+area_m2, height_m            offertes (invoer gebruiker)
+heating_share_pct            offertes (invoer gebruiker)
+required_kw                  offertes (aanbevolen vermogen)
+yearly_gas_m3                offertes (invoer gebruiker)
+gas_price_eur, elec_price_eur offertes (invoer gebruiker)
+net_euro_saved_yearly        offertes (berekend in de frontend)
+created_at, updated_at       offertes
+klant_*                      klanten (NAW, note, consent, timestamps)
+airco_*                      aircos (merk, model, specs, prijs; geen foto's)
+
 
 
 ================================================================================
@@ -126,8 +173,9 @@ Korte werking (voor de klant)
 2. Vermogen is een bereik: cooling_kw_min tot cooling_kw_max.
 3. Fit-check en besparingsberekening gebruiken het maximale koelvermogen.
 4. Per airco kunnen maximaal 3 foto's in "airco_images".
-5. Offerteaanvragen (NAW) komen in "klanten"; aanmaken is publiek, lezen/wijzigen/verwijderen is admin.
-6. Admins kunnen inloggen via "users".
+5. NAW-gegevens komen in "klanten"; aanmaken is publiek, lezen/wijzigen/verwijderen is admin.
+6. Elke offerteaanvraag komt in "offertes" met klant_id, airco_id, de ingevulde berekeningsvelden en het jaarvoordeel; CRUD is alleen voor admins. De GET toont alles via view "offerte_overzicht".
+7. Admins kunnen inloggen via "users".
 
 Voorbeeld Revive:
 - brand: Haier

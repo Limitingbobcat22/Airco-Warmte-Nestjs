@@ -1,12 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { Airco } from '../aircos/airco.entity';
+import { OffertesService } from '../offertes/offertes.service';
 import type { CreateKlantDto } from './dto/create-klant.dto';
 import type { UpdateKlantDto } from './dto/update-klant.dto';
 import { Klant } from './klant.entity';
@@ -24,8 +20,7 @@ export class KlantenService {
   constructor(
     @InjectRepository(Klant)
     private readonly klanten: Repository<Klant>,
-    @InjectRepository(Airco)
-    private readonly aircos: Repository<Airco>,
+    private readonly offertes: OffertesService,
   ) {}
 
   async findAll(): Promise<Klant[]> {
@@ -39,8 +34,6 @@ export class KlantenService {
   }
 
   async create(dto: CreateKlantDto): Promise<Klant> {
-    const aircoId = await this.resolveAircoId(dto.aircoId);
-
     const klant = this.klanten.create({
       id: randomUUID(),
       firstName: dto.firstName,
@@ -53,14 +46,28 @@ export class KlantenService {
       city: dto.city,
       note: dto.note?.trim() ? dto.note.trim() : null,
       consentContact: dto.consentContact,
-      aircoId,
-      aircoLabel: dto.aircoLabel?.trim() || null,
-      coolingKw: dto.coolingKw ?? null,
-      heatingKw: dto.heatingKw ?? null,
-      netEuroSavedYearly: dto.netEuroSavedYearly ?? null,
     });
 
-    return this.klanten.save(klant);
+    const saved = await this.klanten.save(klant);
+
+    try {
+      await this.offertes.createFromAanvraag(saved, {
+        aircoId: dto.aircoId,
+        areaM2: dto.areaM2,
+        heightM: dto.heightM,
+        heatingSharePct: dto.heatingSharePct,
+        requiredKw: dto.requiredKw,
+        yearlyGasM3: dto.yearlyGasM3,
+        gasPriceEur: dto.gasPriceEur,
+        elecPriceEur: dto.elecPriceEur,
+        netEuroSavedYearly: dto.netEuroSavedYearly,
+      });
+    } catch (error) {
+      await this.klanten.remove(saved);
+      throw error;
+    }
+
+    return saved;
   }
 
   async update(id: string, dto: UpdateKlantDto): Promise<Klant> {
@@ -80,17 +87,6 @@ export class KlantenService {
       klant.note = dto.note?.trim() ? dto.note.trim() : null;
     }
     if (dto.consentContact != null) klant.consentContact = dto.consentContact;
-    if (dto.aircoId !== undefined) {
-      klant.aircoId = await this.resolveAircoId(dto.aircoId);
-    }
-    if (dto.aircoLabel !== undefined) {
-      klant.aircoLabel = dto.aircoLabel?.trim() || null;
-    }
-    if (dto.coolingKw !== undefined) klant.coolingKw = dto.coolingKw ?? null;
-    if (dto.heatingKw !== undefined) klant.heatingKw = dto.heatingKw ?? null;
-    if (dto.netEuroSavedYearly !== undefined) {
-      klant.netEuroSavedYearly = dto.netEuroSavedYearly ?? null;
-    }
 
     return this.klanten.save(klant);
   }
@@ -106,16 +102,5 @@ export class KlantenService {
       throw new NotFoundException('Klant niet gevonden.');
     }
     return klant;
-  }
-
-  private async resolveAircoId(
-    aircoId: string | null | undefined,
-  ): Promise<string | null> {
-    if (aircoId == null || aircoId === '') return null;
-    const airco = await this.aircos.findOne({ where: { id: aircoId } });
-    if (!airco) {
-      throw new BadRequestException('Gekozen airco bestaat niet.');
-    }
-    return airco.id;
   }
 }

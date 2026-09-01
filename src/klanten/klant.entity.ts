@@ -3,13 +3,9 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
-  ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Airco } from '../aircos/airco.entity';
-import { decimalTransformer } from '../aircos/decimal.transformer';
 
 @Entity('klanten')
 export class Klant {
@@ -46,47 +42,6 @@ export class Klant {
 
   @Column({ name: 'consent_contact', type: 'tinyint', width: 1 })
   consentContact!: boolean;
-
-  @Column({ name: 'airco_id', type: 'char', length: 36, nullable: true })
-  aircoId!: string | null;
-
-  @ManyToOne(() => Airco, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'airco_id' })
-  airco?: Airco | null;
-
-  /** Snapshot van het gekozen model, blijft staan als de airco later verdwijnt. */
-  @Column({ name: 'airco_label', type: 'varchar', length: 160, nullable: true })
-  aircoLabel!: string | null;
-
-  @Column({
-    name: 'cooling_kw',
-    type: 'decimal',
-    precision: 4,
-    scale: 1,
-    nullable: true,
-    transformer: decimalTransformer,
-  })
-  coolingKw!: number | null;
-
-  @Column({
-    name: 'heating_kw',
-    type: 'decimal',
-    precision: 4,
-    scale: 1,
-    nullable: true,
-    transformer: decimalTransformer,
-  })
-  heatingKw!: number | null;
-
-  @Column({
-    name: 'net_euro_saved_yearly',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    nullable: true,
-    transformer: decimalTransformer,
-  })
-  netEuroSavedYearly!: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

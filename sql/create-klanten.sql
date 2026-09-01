@@ -1,6 +1,5 @@
 -- Tabel: klanten
--- Offerteaanvragen / NAW-gegevens vanuit de popup.
--- Draai dit handmatig als TypeORM synchronize de tabel niet aanmaakt.
+-- NAW-gegevens. Offerteaanvragen (gekozen airco) staan in offertes.
 
 CREATE TABLE IF NOT EXISTS klanten (
   id CHAR(36) NOT NULL,
@@ -14,18 +13,9 @@ CREATE TABLE IF NOT EXISTS klanten (
   city VARCHAR(80) NOT NULL,
   note TEXT NULL,
   consent_contact TINYINT(1) NOT NULL,
-  airco_id CHAR(36) NULL,
-  airco_label VARCHAR(160) NULL,
-  cooling_kw DECIMAL(4,1) NULL,
-  heating_kw DECIMAL(4,1) NULL,
-  net_euro_saved_yearly DECIMAL(10,2) NULL,
   created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   KEY IDX_klanten_email (email),
-  KEY IDX_klanten_created_at (created_at),
-  CONSTRAINT FK_klanten_airco
-    FOREIGN KEY (airco_id) REFERENCES aircos (id)
-    ON DELETE SET NULL
-    ON UPDATE CASCADE
+  KEY IDX_klanten_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

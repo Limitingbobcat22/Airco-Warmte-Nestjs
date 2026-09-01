@@ -4,15 +4,14 @@ import {
   Equals,
   IsBoolean,
   IsEmail,
-  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
+import { OfferteBerekeningDto } from '../../offertes/dto/offerte-berekening.dto';
 
 const DUTCH_POSTAL_CODE = /^[1-9][0-9]{3}\s?[A-Za-z]{2}$/;
 
@@ -20,7 +19,7 @@ function trimString(value: unknown): unknown {
   return typeof value === 'string' ? value.trim() : value;
 }
 
-export class CreateKlantDto {
+export class CreateKlantDto extends OfferteBerekeningDto {
   @ApiProperty({ example: 'Jan' })
   @Transform(({ value }) => trimString(value))
   @IsString()
@@ -97,33 +96,9 @@ export class CreateKlantDto {
 
   @ApiPropertyOptional({
     example: '3f1a0c2e-6b8d-4e9a-9c1b-2d4f6a8b0c1e',
-    description: 'Gekozen airco (optioneel).',
+    description: 'Gekozen airco; wordt op de offerte opgeslagen, niet op de klant.',
   })
   @IsOptional()
   @IsUUID()
   aircoId?: string;
-
-  @ApiPropertyOptional({ example: 'Haier Wandmodel' })
-  @Transform(({ value }) => trimString(value))
-  @IsOptional()
-  @IsString()
-  @MaxLength(160)
-  aircoLabel?: string;
-
-  @ApiPropertyOptional({ example: 6.2 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  coolingKw?: number;
-
-  @ApiPropertyOptional({ example: 6.3 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  heatingKw?: number;
-
-  @ApiPropertyOptional({ example: 420 })
-  @IsOptional()
-  @IsNumber()
-  netEuroSavedYearly?: number;
 }

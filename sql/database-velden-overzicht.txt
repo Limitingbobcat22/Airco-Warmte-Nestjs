@@ -3,11 +3,12 @@ Database: aircoenwarmte
 Gecontroleerd: 26 augustus 2026
 
 Status controle
-- Tabellen aanwezig: aircos, airco_images, users
+- Tabellen aanwezig: aircos, airco_images, users, klanten
 - Oude tabel airco_capacities: NIET meer aanwezig (correct)
 - Oude velden size_code en cooling_kw: NIET meer aanwezig (correct)
 - Nieuwe velden cooling_kw_min en cooling_kw_max: aanwezig (correct)
 - Relatie: airco_images.airco_id -> aircos.id (cascade bij verwijderen)
+- Relatie: klanten.airco_id -> aircos.id (SET NULL bij verwijderen van de airco)
 - Max. 3 foto's per airco via unieke combinatie airco_id + sort_order (0, 1 of 2)
 
 
@@ -87,6 +88,37 @@ Uniek: email
 
 
 ================================================================================
+TABEL: klanten
+Doel: NAW-gegevens van offerteaanvragen (popup)
+================================================================================
+
+Veld                     Type              Verplicht   Uitleg / voorbeeld
+-----------------------  ----------------  ----------  ----------------------------------------------
+id                       char(36)          ja          Unieke ID (UUID)
+first_name               varchar(80)       ja          Voornaam
+last_name                varchar(80)       ja          Achternaam
+email                    varchar(255)      ja          E-mailadres (niet uniek: meerdere aanvragen)
+phone                    varchar(30)       ja          Telefoonnummer
+street                   varchar(120)      ja          Straatnaam
+house_number             varchar(16)       ja          Huisnummer + toevoeging, bijv. 12A
+postal_code              varchar(10)       ja          Nederlandse postcode, bijv. 1234 AB
+city                     varchar(80)       ja          Woonplaats
+note                     text              nee         Vrije opmerking
+consent_contact          tinyint(1)        ja          1 = toestemming voor contact (verplicht bij create)
+airco_id                 char(36)          nee         Koppeling naar aircos.id (SET NULL bij delete)
+airco_label              varchar(160)      nee         Snapshot merk + model, bijv. Haier Wandmodel
+cooling_kw               decimal(4,1)      nee         Snapshot koelvermogen van de aanvraag
+heating_kw               decimal(4,1)      nee         Snapshot verwarmingsvermogen
+net_euro_saved_yearly    decimal(10,2)     nee         Snapshot geschat jaarvoordeel
+created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
+updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
+
+Uniek: id
+Index: email, created_at
+Relatie: airco_id verwijst naar aircos.id (optioneel)
+
+
+================================================================================
 Korte werking (voor de klant)
 ================================================================================
 
@@ -94,7 +126,8 @@ Korte werking (voor de klant)
 2. Vermogen is een bereik: cooling_kw_min tot cooling_kw_max.
 3. Fit-check en besparingsberekening gebruiken het maximale koelvermogen.
 4. Per airco kunnen maximaal 3 foto's in "airco_images".
-5. Admins kunnen inloggen via "users".
+5. Offerteaanvragen (NAW) komen in "klanten"; aanmaken is publiek, lezen/wijzigen/verwijderen is admin.
+6. Admins kunnen inloggen via "users".
 
 Voorbeeld Revive:
 - brand: Haier

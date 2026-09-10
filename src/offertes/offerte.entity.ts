@@ -113,6 +113,9 @@ export class Offerte {
   })
   netEuroSavedYearly!: number | null;
 
+  @Column({ name: 'is_read', type: 'tinyint', width: 1, default: 0 })
+  read!: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

@@ -65,6 +65,9 @@ export class OfferteOverzicht {
   })
   netEuroSavedYearly!: number | null;
 
+  @ViewColumn({ name: 'is_read' })
+  read!: boolean | number;
+
   @ViewColumn({ name: 'created_at' })
   createdAt!: Date;
 

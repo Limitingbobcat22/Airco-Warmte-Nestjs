@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +24,7 @@ import { AdminGuard } from '../auth/admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOfferteDto } from './dto/create-offerte.dto';
 import { UpdateOfferteDto } from './dto/update-offerte.dto';
+import { UpdateOfferteReadDto } from './dto/update-offerte-read.dto';
 import { OffertesService } from './offertes.service';
 
 @ApiTags('offertes')
@@ -64,6 +66,23 @@ export class OffertesController {
   @ApiForbiddenResponse()
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.offertes.findOne(id);
+  }
+
+  @Put(':id/read')
+  @ApiOperation({
+    summary: 'Offerte gelezen-status bijwerken (admin)',
+    description:
+      'Zet alleen het veld read. Gebruik dit bij het openen van de offerte in beheer.',
+  })
+  @ApiOkResponse({ description: 'Gelezen-status bijgewerkt' })
+  @ApiNotFoundResponse({ description: 'Offerte niet gevonden' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  updateRead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOfferteReadDto,
+  ) {
+    return this.offertes.updateRead(id, dto);
   }
 
   @Patch(':id')

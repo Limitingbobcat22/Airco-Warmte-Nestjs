@@ -133,6 +133,7 @@ yearly_gas_m3            decimal(8,1)      nee         Jaarlijks gasverbruik (m�
 gas_price_eur            decimal(6,2)      nee         Huidige gasprijs (€ per m³)
 elec_price_eur           decimal(6,2)      nee         Huidige stroomprijs (€ per kWh)
 net_euro_saved_yearly    decimal(10,2)     nee         Geschat jaarvoordeel, berekend in de frontend
+is_read                  tinyint(1)        ja          0 = ongelezen, 1 = admin heeft de offerte geopend
 created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
 updated_at               datetime(6)       ja          Laatste wijziging (automatisch)
 
@@ -160,6 +161,7 @@ required_kw                  offertes (aanbevolen vermogen)
 yearly_gas_m3                offertes (invoer gebruiker)
 gas_price_eur, elec_price_eur offertes (invoer gebruiker)
 net_euro_saved_yearly        offertes (berekend in de frontend)
+is_read                      offertes (gelezen-status voor admin)
 created_at, updated_at       offertes
 klant_*                      klanten (NAW, note, consent, timestamps)
 airco_*                      aircos (merk, model, specs, prijs; geen foto's)

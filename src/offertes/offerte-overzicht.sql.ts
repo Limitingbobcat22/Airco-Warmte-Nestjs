@@ -12,6 +12,7 @@ SELECT
   o.gas_price_eur,
   o.elec_price_eur,
   o.net_euro_saved_yearly,
+  o.is_read,
   o.created_at,
   o.updated_at,
   k.first_name AS klant_first_name,

@@ -39,6 +39,7 @@ export type OfferteViewResponse = {
   gasPriceEur: number | null;
   elecPriceEur: number | null;
   netEuroSavedYearly: number | null;
+  read: boolean;
   createdAt: Date;
   updatedAt: Date;
   klant: Klant | null;
@@ -128,6 +129,7 @@ export function mapOfferteOverzicht(row: OfferteOverzicht): OfferteViewResponse 
     gasPriceEur: row.gasPriceEur,
     elecPriceEur: row.elecPriceEur,
     netEuroSavedYearly: row.netEuroSavedYearly,
+    read: asBoolean(row.read),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     klant,

@@ -16,6 +16,7 @@ import {
   type OfferteBerekeningInput,
 } from './dto/offerte-berekening.dto';
 import type { UpdateOfferteDto } from './dto/update-offerte.dto';
+import type { UpdateOfferteReadDto } from './dto/update-offerte-read.dto';
 import { Offerte } from './offerte.entity';
 import {
   mapOfferteOverzicht,
@@ -64,6 +65,7 @@ export class OffertesService implements OnModuleInit {
       id: randomUUID(),
       klantId: klant.id,
       aircoId: airco?.id ?? null,
+      read: true,
       ...berekeningFrom(dto),
     });
     const saved = await this.offertes.save(offerte);
@@ -81,6 +83,7 @@ export class OffertesService implements OnModuleInit {
       id: randomUUID(),
       klantId: klant.id,
       aircoId: airco?.id ?? null,
+      read: false,
       ...berekeningFrom(aanvraag),
     });
     return this.offertes.save(offerte);
@@ -101,6 +104,16 @@ export class OffertesService implements OnModuleInit {
 
     applyBerekening(offerte, dto);
 
+    await this.offertes.save(offerte);
+    return this.loadOverzicht(id);
+  }
+
+  async updateRead(
+    id: string,
+    dto: UpdateOfferteReadDto,
+  ): Promise<OfferteViewResponse> {
+    const offerte = await this.loadOfferteRow(id);
+    offerte.read = dto.read;
     await this.offertes.save(offerte);
     return this.loadOverzicht(id);
   }

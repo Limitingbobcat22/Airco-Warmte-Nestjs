@@ -83,6 +83,7 @@ export class AircosService {
       roomM2: dto.roomM2.trim(),
       heatingCoverage: dto.heatingCoverage ?? 0.55,
       priceEur: dto.priceEur,
+      quantity: dto.quantity ?? 0,
       accent: dto.accent ?? '#005A9C',
     });
 
@@ -124,6 +125,7 @@ export class AircosService {
       airco.heatingCoverage = dto.heatingCoverage;
     }
     if (dto.priceEur != null) airco.priceEur = dto.priceEur;
+    if (dto.quantity != null) airco.quantity = dto.quantity;
     if (dto.accent != null) airco.accent = dto.accent;
 
     await this.aircos.save(airco);

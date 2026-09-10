@@ -130,6 +130,12 @@ export class CreateAircoDto {
   @Min(0)
   priceEur!: number;
 
+  @ApiPropertyOptional({ example: 5, description: 'Voorraad in stuks' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  quantity?: number;
+
   @ApiPropertyOptional({ example: '#005A9C' })
   @IsOptional()
   @IsHexColor()

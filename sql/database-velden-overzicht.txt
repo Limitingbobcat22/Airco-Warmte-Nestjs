@@ -46,6 +46,7 @@ refrigerant              varchar(16)       ja          Koudemiddel, standaard R3
 room_m2                  varchar(40)       ja          Geschikte ruimte, bijv. tot 40 m²
 heating_coverage         decimal(3,2)      ja          Interne factor voor berekeningen
 price_eur                decimal(10,2)     ja          Prijs vanaf in euro's, bijv. 1890.00
+quantity                 int               ja          Voorraad in stuks, standaard 0
 accent                   varchar(16)       ja          UI-kleurcode, standaard #005A9C
 created_at               datetime(6)       ja          Aanmaakdatum (automatisch)
 updated_at               datetime(6)       ja          Laatste wijziging (automatisch)

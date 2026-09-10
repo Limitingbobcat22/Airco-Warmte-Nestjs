@@ -114,6 +114,10 @@ export class Airco {
   })
   priceEur!: number;
 
+  /** Voorraad (aantal stuks). */
+  @Column({ type: 'int', default: 0 })
+  quantity!: number;
+
   @Column({ type: 'varchar', length: 16, default: '#005A9C' })
   accent!: string;
 

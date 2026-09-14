@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AircosModule } from './aircos/aircos.module';
 import { AuthModule } from './auth/auth.module';
+import { HandleidingenModule } from './handleidingen/handleidingen.module';
 import { KlantenModule } from './klanten/klanten.module';
 import { OffertesModule } from './offertes/offertes.module';
 
@@ -28,6 +29,7 @@ import { OffertesModule } from './offertes/offertes.module';
     }),
     AuthModule,
     AircosModule,
+    HandleidingenModule,
     KlantenModule,
     OffertesModule,
   ],

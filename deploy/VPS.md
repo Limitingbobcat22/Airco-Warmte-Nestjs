@@ -63,7 +63,7 @@ Daarna: http://<vps-ip>. HTTPS (Caddy of Certbot) later, niet nodig voor de loka
 
 ## Als Docker Desktop tegenwerkt
 
-Native Ubuntu (WSL of VPS): MySQL 8, Node 22, pnpm, `pnpm build` + `pnpm start:prod`, Nginx met dezelfde `nginx.conf` (vervang `api:3000` door `127.0.0.1:3000`), process manager zoals systemd of PM2.
+Native Ubuntu (WSL of VPS): MySQL 8.4, Node 24, pnpm, `pnpm build` + `pnpm start:prod`, Nginx met dezelfde `nginx.conf` (vervang `api:3000` door `127.0.0.1:3000`), process manager zoals systemd of PM2.
 
 ## Let op
 

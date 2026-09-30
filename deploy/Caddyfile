@@ -1,0 +1,15 @@
+{
+	email info@aircoenwarmte.nl
+}
+
+aircoenwarmte.nl {
+	reverse_proxy web:80
+}
+
+www.aircoenwarmte.nl {
+	redir https://aircoenwarmte.nl{uri} permanent
+}
+
+http://217.160.130.194 {
+	redir https://aircoenwarmte.nl{uri} permanent
+}

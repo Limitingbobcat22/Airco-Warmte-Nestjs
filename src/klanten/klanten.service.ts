@@ -46,6 +46,7 @@ export class KlantenService {
       city: dto.city,
       note: dto.note?.trim() ? dto.note.trim() : null,
       consentContact: dto.consentContact,
+      consentTerms: dto.consentTerms,
     });
 
     const saved = await this.klanten.save(klant);
@@ -87,6 +88,7 @@ export class KlantenService {
       klant.note = dto.note?.trim() ? dto.note.trim() : null;
     }
     if (dto.consentContact != null) klant.consentContact = dto.consentContact;
+    if (dto.consentTerms != null) klant.consentTerms = dto.consentTerms;
 
     return this.klanten.save(klant);
   }

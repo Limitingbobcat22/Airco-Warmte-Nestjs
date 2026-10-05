@@ -43,6 +43,9 @@ export class Klant {
   @Column({ name: 'consent_contact', type: 'tinyint', width: 1 })
   consentContact!: boolean;
 
+  @Column({ name: 'consent_terms', type: 'tinyint', width: 1, default: 0 })
+  consentTerms!: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

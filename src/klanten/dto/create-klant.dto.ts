@@ -94,6 +94,16 @@ export class CreateKlantDto extends OfferteBerekeningDto {
   @Equals(true, { message: 'Toestemming voor contact is verplicht.' })
   consentContact!: boolean;
 
+  @ApiProperty({
+    example: true,
+    description: 'Acceptatie van de algemene voorwaarden.',
+  })
+  @IsBoolean()
+  @Equals(true, {
+    message: 'Acceptatie van de algemene voorwaarden is verplicht.',
+  })
+  consentTerms!: boolean;
+
   @ApiPropertyOptional({
     example: '3f1a0c2e-6b8d-4e9a-9c1b-2d4f6a8b0c1e',
     description: 'Gekozen airco; wordt op de offerte opgeslagen, niet op de klant.',

@@ -104,6 +104,9 @@ export class OfferteOverzicht {
   @ViewColumn({ name: 'klant_consent_contact' })
   klantConsentContact!: boolean | number | null;
 
+  @ViewColumn({ name: 'klant_consent_terms' })
+  klantConsentTerms!: boolean | number | null;
+
   @ViewColumn({ name: 'klant_created_at' })
   klantCreatedAt!: Date | null;
 

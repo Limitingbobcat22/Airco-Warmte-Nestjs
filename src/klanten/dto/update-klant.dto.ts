@@ -5,6 +5,7 @@ import { CreateKlantDto } from './create-klant.dto';
 export class UpdateKlantDto extends PartialType(
   OmitType(CreateKlantDto, [
     'consentContact',
+    'consentTerms',
     'aircoId',
     'areaM2',
     'heightM',
@@ -23,4 +24,12 @@ export class UpdateKlantDto extends PartialType(
   @IsOptional()
   @IsBoolean()
   consentContact?: boolean;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Bij bewerken mag acceptatie van de voorwaarden true of false zijn.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  consentTerms?: boolean;
 }

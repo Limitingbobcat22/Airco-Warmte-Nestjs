@@ -25,6 +25,7 @@ SELECT
   k.city AS klant_city,
   k.note AS klant_note,
   k.consent_contact AS klant_consent_contact,
+  k.consent_terms AS klant_consent_terms,
   k.created_at AS klant_created_at,
   k.updated_at AS klant_updated_at,
   a.brand AS airco_brand,

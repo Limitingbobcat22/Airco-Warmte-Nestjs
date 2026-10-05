@@ -83,6 +83,7 @@ export function mapOfferteOverzicht(row: OfferteOverzicht): OfferteViewResponse 
           city: row.klantCity ?? '',
           note: row.klantNote,
           consentContact: asBoolean(row.klantConsentContact),
+          consentTerms: asBoolean(row.klantConsentTerms),
           createdAt: row.klantCreatedAt ?? row.createdAt,
           updatedAt: row.klantUpdatedAt ?? row.updatedAt,
         }

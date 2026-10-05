@@ -12,6 +12,7 @@ import { OnderhoudType } from '../onderhoud-types/onderhoud-type.entity';
 import type { AdminCreateOnderhoudOfferteDto } from './dto/admin-create-onderhoud-offerte.dto';
 import type { CreateOnderhoudOfferteDto } from './dto/create-onderhoud-offerte.dto';
 import type { UpdateOnderhoudOfferteDto } from './dto/update-onderhoud-offerte.dto';
+import type { UpdateOnderhoudOfferteReadDto } from './dto/update-onderhoud-offerte-read.dto';
 import { OnderhoudOfferteImage } from './onderhoud-offerte-image.entity';
 import { OnderhoudOfferteTypeLink } from './onderhoud-offerte-type-link.entity';
 import { OnderhoudOfferte } from './onderhoud-offerte.entity';
@@ -68,6 +69,7 @@ export type OnderhoudOfferteOverview = {
   city: string | null;
   typeNames: string | null;
   imageCount: number;
+  read: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
 };
@@ -81,9 +83,47 @@ type OverviewRow = {
   city: string | null;
   typeNames: string | null;
   imageCount: number | string;
+  isRead: boolean | number | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 };
+
+function asBoolean(value: boolean | number | string | null | undefined): boolean {
+  if (typeof value === 'boolean') return value;
+  return Number(value) === 1;
+}
+
+function mapOverview(row: OverviewRow): OnderhoudOfferteOverview {
+  return {
+    id: row.id,
+    klantId: row.klantId,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    city: row.city,
+    typeNames: row.typeNames,
+    imageCount: Number(row.imageCount),
+    read: asBoolean(row.isRead),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+const OVERVIEW_SELECT = `
+  SELECT
+    id,
+    klant_id AS klantId,
+    name,
+    email,
+    phone,
+    city,
+    type_names AS typeNames,
+    image_count AS imageCount,
+    is_read AS isRead,
+    created_at AS createdAt,
+    updated_at AS updatedAt
+  FROM onderhoud_offerte_overview
+`;
 
 function uniqueIds(ids: string[]): string[] {
   return [...new Set(ids)];
@@ -108,37 +148,15 @@ export class OnderhoudOffertesService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    await this.ensureReadColumn();
     await this.dataSource.query(CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL);
   }
 
   async findAll(): Promise<OnderhoudOfferteOverview[]> {
-    const rows: OverviewRow[] = await this.dataSource.query(`
-      SELECT
-        id,
-        klant_id AS klantId,
-        name,
-        email,
-        phone,
-        city,
-        type_names AS typeNames,
-        image_count AS imageCount,
-        created_at AS createdAt,
-        updated_at AS updatedAt
-      FROM onderhoud_offerte_overview
-      ORDER BY created_at DESC
-    `);
-    return rows.map((row) => ({
-      id: row.id,
-      klantId: row.klantId,
-      name: row.name,
-      email: row.email,
-      phone: row.phone,
-      city: row.city,
-      typeNames: row.typeNames,
-      imageCount: Number(row.imageCount),
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    }));
+    const rows: OverviewRow[] = await this.dataSource.query(
+      `${OVERVIEW_SELECT} ORDER BY created_at DESC`,
+    );
+    return rows.map(mapOverview);
   }
 
   async findOne(id: string): Promise<OnderhoudOfferteResponse> {
@@ -148,6 +166,7 @@ export class OnderhoudOffertesService implements OnModuleInit {
   async create(
     dto: CreateOnderhoudOfferteDto | AdminCreateOnderhoudOfferteDto,
     files: UploadedFilePayload[],
+    options?: { read?: boolean },
   ): Promise<OnderhoudOfferteResponse> {
     const typeIds = uniqueIds(dto.typeIds);
     if (typeIds.length === 0) {
@@ -164,6 +183,7 @@ export class OnderhoudOffertesService implements OnModuleInit {
       const offerte = manager.create(OnderhoudOfferte, {
         id: randomUUID(),
         klantId: linked.id,
+        read: options?.read ?? false,
       });
       await manager.save(offerte);
       await manager.save(
@@ -240,6 +260,22 @@ export class OnderhoudOffertesService implements OnModuleInit {
     return this.findOne(id);
   }
 
+  async updateRead(
+    id: string,
+    dto: UpdateOnderhoudOfferteReadDto,
+  ): Promise<OnderhoudOfferteOverview> {
+    const offerte = await this.loadOfferte(id);
+    offerte.read = dto.read;
+    await this.offertes.save(offerte);
+    const rows: OverviewRow[] = await this.dataSource.query(
+      `${OVERVIEW_SELECT} WHERE id = ?`,
+      [id],
+    );
+    const row = rows[0];
+    if (!row) throw new NotFoundException('Onderhoudofferte niet gevonden.');
+    return mapOverview(row);
+  }
+
   async remove(id: string): Promise<void> {
     await this.loadOfferte(id);
     await this.dataSource.transaction(async (manager) => {
@@ -314,6 +350,21 @@ export class OnderhoudOffertesService implements OnModuleInit {
       throw new BadRequestException('Een gekozen onderhoudtype bestaat niet.');
     }
     return types;
+  }
+
+  private async ensureReadColumn(): Promise<void> {
+    const rows: Array<{ count: number | string }> = await this.dataSource.query(`
+      SELECT COUNT(*) AS count
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'onderhoud_offertes'
+        AND COLUMN_NAME = 'is_read'
+    `);
+    if (Number(rows[0]?.count) > 0) return;
+    await this.dataSource.query(`
+      ALTER TABLE onderhoud_offertes
+        ADD COLUMN is_read TINYINT(1) NOT NULL DEFAULT 0 AFTER klant_id
+    `);
   }
 
   private async loadOfferte(id: string): Promise<OnderhoudOfferte> {

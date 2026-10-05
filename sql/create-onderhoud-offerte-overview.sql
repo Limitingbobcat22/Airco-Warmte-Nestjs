@@ -25,6 +25,7 @@ SELECT
     FROM onderhoud_offerte_images i
     WHERE i.offerte_id = o.id
   ) AS image_count,
+  o.is_read AS is_read,
   o.created_at AS created_at,
   o.updated_at AS updated_at
 FROM onderhoud_offertes o

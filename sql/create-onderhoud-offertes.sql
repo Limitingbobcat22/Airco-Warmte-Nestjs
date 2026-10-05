@@ -6,6 +6,7 @@
 CREATE TABLE IF NOT EXISTS onderhoud_offertes (
   id CHAR(36) NOT NULL,
   klant_id CHAR(36) NULL,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
@@ -60,6 +61,7 @@ SELECT
     FROM onderhoud_offerte_images i
     WHERE i.offerte_id = o.id
   ) AS image_count,
+  o.is_read AS is_read,
   o.created_at AS created_at,
   o.updated_at AS updated_at
 FROM onderhoud_offertes o

@@ -3,7 +3,7 @@ import { decimalTransformer } from '../aircos/decimal.transformer';
 import { OFFERTE_OVERZICHT_SELECT_SQL } from './offerte-overzicht.sql';
 
 @ViewEntity({
-  name: 'offerte_overzicht',
+  name: 'airco_offerte_overzicht',
   expression: OFFERTE_OVERZICHT_SELECT_SQL,
 })
 export class OfferteOverzicht {

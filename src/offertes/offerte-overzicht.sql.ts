@@ -1,4 +1,4 @@
-/** SELECT achter de view offerte_overzicht. Alleen lezen; writes gaan via tabel offertes. */
+/** SELECT achter de view airco_offerte_overzicht. Alleen lezen; writes gaan via tabel airco_offertes. */
 export const OFFERTE_OVERZICHT_SELECT_SQL = `
 SELECT
   o.id,
@@ -50,12 +50,12 @@ SELECT
   a.heating_coverage AS airco_heating_coverage,
   a.price_eur AS airco_price_eur,
   a.accent AS airco_accent
-FROM offertes o
+FROM airco_offertes o
 LEFT JOIN klanten k ON k.id = o.klant_id
 LEFT JOIN aircos a ON a.id = o.airco_id
 `.trim();
 
 export const CREATE_OFFERTE_OVERZICHT_VIEW_SQL = `
-CREATE OR REPLACE VIEW offerte_overzicht AS
+CREATE OR REPLACE VIEW airco_offerte_overzicht AS
 ${OFFERTE_OVERZICHT_SELECT_SQL}
 `.trim();

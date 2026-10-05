@@ -47,9 +47,9 @@ export class OffertesController {
   @ApiOperation({
     summary: 'Lijst alle offertes (admin)',
     description:
-      'Leest uit de view offerte_overzicht: offerte + klant + airco + jaarvoordeel.',
+      'Leest uit de view airco_offerte_overzicht: offerte + klant + airco + jaarvoordeel.',
   })
-  @ApiOkResponse({ description: 'Offertes uit view offerte_overzicht, nieuwste eerst' })
+  @ApiOkResponse({ description: 'Offertes uit view airco_offerte_overzicht, nieuwste eerst' })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   findAll() {
@@ -59,7 +59,7 @@ export class OffertesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Eén offerte ophalen (admin)',
-    description: 'Leest uit de view offerte_overzicht.',
+    description: 'Leest uit de view airco_offerte_overzicht.',
   })
   @ApiNotFoundResponse({ description: 'Offerte niet gevonden' })
   @ApiUnauthorizedResponse()

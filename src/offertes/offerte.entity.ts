@@ -12,7 +12,8 @@ import { Airco } from '../aircos/airco.entity';
 import { decimalTransformer } from '../aircos/decimal.transformer';
 import { Klant } from '../klanten/klant.entity';
 
-@Entity('offertes')
+/** Airco-offertes, gekoppeld aan een klant en een airco. */
+@Entity('airco_offertes')
 export class Offerte {
   @PrimaryColumn({ type: 'char', length: 36 })
   id!: string;

@@ -1,8 +1,8 @@
--- View: offerte + klant + airco + berekend jaarvoordeel.
--- Alleen voor lezen (GET). Writes gaan via tabel offertes.
+-- View: airco-offerte + klant + airco + berekend jaarvoordeel.
+-- Alleen voor lezen (GET). Writes gaan via tabel airco_offertes.
 -- De API maakt/ververst deze view ook bij opstarten.
 
-CREATE OR REPLACE VIEW offerte_overzicht AS
+CREATE OR REPLACE VIEW airco_offerte_overzicht AS
 SELECT
   o.id,
   o.klant_id,
@@ -53,6 +53,6 @@ SELECT
   a.heating_coverage AS airco_heating_coverage,
   a.price_eur AS airco_price_eur,
   a.accent AS airco_accent
-FROM offertes o
+FROM airco_offertes o
 LEFT JOIN klanten k ON k.id = o.klant_id
 LEFT JOIN aircos a ON a.id = o.airco_id;

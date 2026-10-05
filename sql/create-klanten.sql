@@ -1,5 +1,5 @@
 -- Tabel: klanten
--- NAW-gegevens. Offerteaanvragen (gekozen airco) staan in offertes.
+-- NAW-gegevens. Offerteaanvragen (gekozen airco) staan in airco_offertes.
 
 CREATE TABLE IF NOT EXISTS klanten (
   id CHAR(36) NOT NULL,

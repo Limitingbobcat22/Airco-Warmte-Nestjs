@@ -26,6 +26,9 @@ export class OnderhoudOfferte {
   @JoinColumn({ name: 'klant_id' })
   klant?: Klant | null;
 
+  @Column({ name: 'is_read', type: 'tinyint', width: 1, default: 0 })
+  read!: boolean;
+
   @OneToMany(() => OnderhoudOfferteTypeLink, (link) => link.offerte)
   typeLinks!: OnderhoudOfferteTypeLink[];
 

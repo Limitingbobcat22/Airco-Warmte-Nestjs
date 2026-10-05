@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   StreamableFile,
   UploadedFiles,
   UseGuards,
@@ -32,6 +33,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminCreateOnderhoudOfferteDto } from './dto/admin-create-onderhoud-offerte.dto';
 import { CreateOnderhoudOfferteDto } from './dto/create-onderhoud-offerte.dto';
 import { UpdateOnderhoudOfferteDto } from './dto/update-onderhoud-offerte.dto';
+import { UpdateOnderhoudOfferteReadDto } from './dto/update-onderhoud-offerte-read.dto';
 import { OnderhoudOffertesService } from './onderhoud-offertes.service';
 import type { UploadedFilePayload } from './uploaded-file';
 
@@ -85,7 +87,7 @@ export class OnderhoudOffertesController {
     @Body() dto: AdminCreateOnderhoudOfferteDto,
     @UploadedFiles() photos: UploadedFilePayload[] = [],
   ) {
-    return this.offertes.create(dto, photos ?? []);
+    return this.offertes.create(dto, photos ?? [], { read: true });
   }
 
   @Get()
@@ -125,6 +127,25 @@ export class OnderhoudOffertesController {
   @ApiNotFoundResponse()
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.offertes.findOne(id);
+  }
+
+  @Put(':id/read')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Onderhoudofferte gelezen-status bijwerken (admin)',
+    description:
+      'Zet alleen het veld read. Gebruik dit bij het openen van de offerte in beheer.',
+  })
+  @ApiOkResponse({ description: 'Gelezen-status bijgewerkt' })
+  @ApiNotFoundResponse({ description: 'Onderhoudofferte niet gevonden' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  updateRead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateOnderhoudOfferteReadDto,
+  ) {
+    return this.offertes.updateRead(id, dto);
   }
 
   @Patch(':id')

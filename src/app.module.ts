@@ -7,6 +7,8 @@ import { AircosModule } from './aircos/aircos.module';
 import { AuthModule } from './auth/auth.module';
 import { HandleidingenModule } from './handleidingen/handleidingen.module';
 import { KlantenModule } from './klanten/klanten.module';
+import { OnderhoudOffertesModule } from './onderhoud-offertes/onderhoud-offertes.module';
+import { OnderhoudTypesModule } from './onderhoud-types/onderhoud-types.module';
 import { OffertesModule } from './offertes/offertes.module';
 
 @Module({
@@ -31,6 +33,8 @@ import { OffertesModule } from './offertes/offertes.module';
     AircosModule,
     HandleidingenModule,
     KlantenModule,
+    OnderhoudTypesModule,
+    OnderhoudOffertesModule,
     OffertesModule,
   ],
   controllers: [AppController],

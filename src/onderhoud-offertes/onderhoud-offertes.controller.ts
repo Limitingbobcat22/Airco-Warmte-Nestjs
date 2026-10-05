@@ -46,31 +46,21 @@ export class OnderhoudOffertesController {
   constructor(private readonly offertes: OnderhoudOffertesService) {}
 
   @Post()
-  @UseInterceptors(FilesInterceptor('photos', 3, PHOTO_UPLOAD))
+  @UseInterceptors(FilesInterceptor('images', 3, PHOTO_UPLOAD))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['firstName', 'lastName', 'email', 'phone', 'street', 'houseNumber', 'postalCode', 'city', 'consentContact', 'consentTerms', 'typeIds'],
+      required: ['klantId', 'typeIds'],
       properties: {
-        firstName: { type: 'string' },
-        lastName: { type: 'string' },
-        email: { type: 'string' },
-        phone: { type: 'string' },
-        street: { type: 'string' },
-        houseNumber: { type: 'string' },
-        postalCode: { type: 'string' },
-        city: { type: 'string' },
-        note: { type: 'string' },
-        consentContact: { type: 'boolean' },
-        consentTerms: { type: 'boolean' },
+        klantId: { type: 'string', format: 'uuid' },
         typeIds: { type: 'string', description: 'JSON-array met type-id\'s' },
-        photos: { type: 'array', items: { type: 'string', format: 'binary' } },
+        images: { type: 'array', items: { type: 'string', format: 'binary' } },
       },
     },
   })
   @ApiOperation({
-    summary: 'Onderhoudofferte aanmaken met klantgegevens, types en foto\'s (publiek)',
+    summary: 'Onderhoudofferte aanmaken met klant, onderhoudtype en afbeeldingen (publiek)',
   })
   @ApiCreatedResponse({ description: 'Onderhoudofferte aangemaakt' })
   create(
@@ -82,7 +72,7 @@ export class OnderhoudOffertesController {
 
   @Post('beheer')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @UseInterceptors(FilesInterceptor('photos', 3, PHOTO_UPLOAD))
+  @UseInterceptors(FilesInterceptor('images', 3, PHOTO_UPLOAD))
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
@@ -101,7 +91,9 @@ export class OnderhoudOffertesController {
   @Get()
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Lijst alle onderhoudoffertes (admin)' })
+  @ApiOperation({
+    summary: 'Overzicht van onderhoudoffertes uit onderhoud_offerte_overview (admin)',
+  })
   @ApiOkResponse()
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
@@ -109,20 +101,20 @@ export class OnderhoudOffertesController {
     return this.offertes.findAll();
   }
 
-  @Get(':id/fotos/:fotoId')
+  @Get(':id/images/:imageId')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Foto van een onderhoudofferte (admin)' })
+  @ApiOperation({ summary: 'Afbeelding van een onderhoudofferte (admin)' })
   @ApiNotFoundResponse()
   @Header('Cache-Control', 'private, max-age=3600')
-  async getFoto(
+  async getImage(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('fotoId', ParseUUIDPipe) fotoId: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
   ) {
-    const foto = await this.offertes.getFotoBuffer(id, fotoId);
-    return new StreamableFile(foto.data, {
-      type: foto.mimeType,
-      disposition: `inline; filename="${foto.originalFilename}"`,
+    const image = await this.offertes.getImageBuffer(id, imageId);
+    return new StreamableFile(image.data, {
+      type: image.mimeType,
+      disposition: `inline; filename="${image.originalFilename}"`,
     });
   }
 
@@ -137,7 +129,7 @@ export class OnderhoudOffertesController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @UseInterceptors(FilesInterceptor('photos', 3, PHOTO_UPLOAD))
+  @UseInterceptors(FilesInterceptor('images', 3, PHOTO_UPLOAD))
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Onderhoudofferte bijwerken (admin)' })

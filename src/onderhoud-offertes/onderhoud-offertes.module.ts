@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { Klant } from '../klanten/klant.entity';
 import { OnderhoudType } from '../onderhoud-types/onderhoud-type.entity';
-import { OnderhoudOfferteFoto } from './onderhoud-offerte-foto.entity';
+import { OnderhoudOfferteImage } from './onderhoud-offerte-image.entity';
 import { OnderhoudOfferteTypeLink } from './onderhoud-offerte-type-link.entity';
 import { OnderhoudOfferte } from './onderhoud-offerte.entity';
 import { OnderhoudOffertesController } from './onderhoud-offertes.controller';
@@ -13,7 +13,7 @@ import { OnderhoudOffertesService } from './onderhoud-offertes.service';
   imports: [
     TypeOrmModule.forFeature([
       OnderhoudOfferte,
-      OnderhoudOfferteFoto,
+      OnderhoudOfferteImage,
       OnderhoudOfferteTypeLink,
       OnderhoudType,
       Klant,

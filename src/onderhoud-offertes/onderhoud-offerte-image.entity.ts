@@ -7,15 +7,15 @@ import {
 } from 'typeorm';
 import { OnderhoudOfferte } from './onderhoud-offerte.entity';
 
-@Entity('onderhoud_offerte_fotos')
-export class OnderhoudOfferteFoto {
+@Entity('onderhoud_offerte_images')
+export class OnderhoudOfferteImage {
   @PrimaryColumn({ type: 'char', length: 36 })
   id!: string;
 
   @Column({ name: 'offerte_id', type: 'char', length: 36 })
   offerteId!: string;
 
-  @ManyToOne(() => OnderhoudOfferte, (offerte) => offerte.fotos, {
+  @ManyToOne(() => OnderhoudOfferte, (offerte) => offerte.images, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'offerte_id' })

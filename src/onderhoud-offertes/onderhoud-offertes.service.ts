@@ -11,7 +11,7 @@ import { OnderhoudType } from '../onderhoud-types/onderhoud-type.entity';
 import type { AdminCreateOnderhoudOfferteDto } from './dto/admin-create-onderhoud-offerte.dto';
 import type { CreateOnderhoudOfferteDto } from './dto/create-onderhoud-offerte.dto';
 import type { UpdateOnderhoudOfferteDto } from './dto/update-onderhoud-offerte.dto';
-import { OnderhoudOfferteFoto } from './onderhoud-offerte-foto.entity';
+import { OnderhoudOfferteImage } from './onderhoud-offerte-image.entity';
 import { OnderhoudOfferteTypeLink } from './onderhoud-offerte-type-link.entity';
 import { OnderhoudOfferte } from './onderhoud-offerte.entity';
 import {
@@ -51,25 +51,44 @@ export type OnderhoudOfferteResponse = {
   consentContact: boolean;
   consentTerms: boolean;
   types: OnderhoudOfferteTypeResponse[];
-  photos: OnderhoudOffertePhotoResponse[];
+  images: OnderhoudOffertePhotoResponse[];
   createdAt: Date;
   updatedAt: Date;
 };
 
-function normalizePostalCode(value: string): string {
-  const compact = value.replace(/\s+/g, '').toUpperCase();
-  if (/^[1-9][0-9]{3}[A-Z]{2}$/.test(compact)) {
-    return `${compact.slice(0, 4)} ${compact.slice(4)}`;
-  }
-  return value.trim().toUpperCase();
-}
+/** Rij uit de view onderhoud_offerte_overview, klaar voor de beheertabel. */
+export type OnderhoudOfferteOverview = {
+  id: string;
+  klantId: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  typeNames: string | null;
+  imageCount: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
 
-function maxPhotosForTypes(typeCount: number): number {
-  return Math.min(typeCount, MAX_PHOTOS);
-}
+type OverviewRow = {
+  id: string;
+  klantId: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  typeNames: string | null;
+  imageCount: number | string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
 
 function uniqueIds(ids: string[]): string[] {
   return [...new Set(ids)];
+}
+
+function maxImagesForTypes(typeCount: number): number {
+  return Math.min(Math.max(typeCount, 0), MAX_PHOTOS);
 }
 
 @Injectable()
@@ -77,8 +96,8 @@ export class OnderhoudOffertesService {
   constructor(
     @InjectRepository(OnderhoudOfferte)
     private readonly offertes: Repository<OnderhoudOfferte>,
-    @InjectRepository(OnderhoudOfferteFoto)
-    private readonly fotos: Repository<OnderhoudOfferteFoto>,
+    @InjectRepository(OnderhoudOfferteImage)
+    private readonly images: Repository<OnderhoudOfferteImage>,
     @InjectRepository(OnderhoudType)
     private readonly types: Repository<OnderhoudType>,
     @InjectRepository(Klant)
@@ -86,12 +105,34 @@ export class OnderhoudOffertesService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(): Promise<OnderhoudOfferteResponse[]> {
-    const rows = await this.offertes.find({
-      relations: { fotos: true, typeLinks: { type: true }, klant: true },
-      order: { createdAt: 'DESC' },
-    });
-    return rows.map((row) => this.toResponse(row));
+  async findAll(): Promise<OnderhoudOfferteOverview[]> {
+    const rows: OverviewRow[] = await this.dataSource.query(`
+      SELECT
+        id,
+        klant_id AS klantId,
+        name,
+        email,
+        phone,
+        city,
+        type_names AS typeNames,
+        image_count AS imageCount,
+        created_at AS createdAt,
+        updated_at AS updatedAt
+      FROM onderhoud_offerte_overview
+      ORDER BY created_at DESC
+    `);
+    return rows.map((row) => ({
+      id: row.id,
+      klantId: row.klantId,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      city: row.city,
+      typeNames: row.typeNames,
+      imageCount: Number(row.imageCount),
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }));
   }
 
   async findOne(id: string): Promise<OnderhoudOfferteResponse> {
@@ -106,17 +147,17 @@ export class OnderhoudOffertesService {
     if (typeIds.length === 0) {
       throw new BadRequestException('Kies minimaal één onderhoudtype.');
     }
-    this.assertPhotos(files, typeIds.length);
+    this.assertImages(files, typeIds.length);
     const types = await this.loadTypes(typeIds);
-    const linked = await this.linkedKlant(
-      'klantId' in dto ? dto.klantId : undefined,
-    );
+    const linked = await this.linkedKlant(dto.klantId);
+    if (!linked) {
+      throw new BadRequestException('Kies een bestaande klant.');
+    }
 
     const saved = await this.dataSource.transaction(async (manager) => {
       const offerte = manager.create(OnderhoudOfferte, {
         id: randomUUID(),
-        ...this.customerFrom(linked ?? dto),
-        klantId: linked?.id ?? null,
+        klantId: linked.id,
       });
       await manager.save(offerte);
       await manager.save(
@@ -127,8 +168,8 @@ export class OnderhoudOffertesService {
           }),
         ),
       );
-      const fotos = this.fotoEntities(manager, offerte.id, files, 0);
-      if (fotos.length > 0) await manager.save(fotos);
+      const images = this.imageEntities(manager, offerte.id, files, 0);
+      if (images.length > 0) await manager.save(images);
       return offerte.id;
     });
 
@@ -146,29 +187,32 @@ export class OnderhoudOffertesService {
       throw new BadRequestException('Kies minimaal één onderhoudtype.');
     }
     const types = await this.loadTypes(typeIds);
-    const keepIds = new Set(dto.keepPhotoIds);
+    const keepIds = new Set(uniqueIds(dto.keepImageIds));
     const linked = await this.linkedKlant(dto.klantId);
-    const kept = existing.fotos.filter((foto) => keepIds.has(foto.id));
+    if (!linked) {
+      throw new BadRequestException('Kies een bestaande klant.');
+    }
+    const kept = existing.images.filter((image) => keepIds.has(image.id));
     if (kept.length !== keepIds.size) {
-      throw new BadRequestException('Een van de foto\'s hoort niet bij deze offerte.');
+      throw new BadRequestException('Een van de afbeeldingen hoort niet bij deze offerte.');
     }
     const total = kept.length + files.length;
-    const max = maxPhotosForTypes(typeIds.length);
+    const max = maxImagesForTypes(typeIds.length);
     if (total > max) {
       throw new BadRequestException(
-        `U kunt maximaal ${max} ${max === 1 ? 'foto' : "foto's"} toevoegen bij ${typeIds.length} ${typeIds.length === 1 ? 'onderhoudtype' : 'onderhoudtypes'}.`,
+        `U kunt maximaal ${max} ${max === 1 ? 'afbeelding' : 'afbeeldingen'} toevoegen bij ${typeIds.length} ${typeIds.length === 1 ? 'onderhoudtype' : 'onderhoudtypes'}.`,
       );
     }
-    this.assertPhotoFiles(files);
+    this.assertImageFiles(files);
     const nextSort =
-      kept.reduce((maxSort, foto) => Math.max(maxSort, foto.sortOrder), -1) + 1;
+      kept.reduce((maxSort, image) => Math.max(maxSort, image.sortOrder), -1) + 1;
 
     await this.dataSource.transaction(async (manager) => {
-      const removeIds = existing.fotos
-        .filter((foto) => !keepIds.has(foto.id))
-        .map((foto) => foto.id);
+      const removeIds = existing.images
+        .filter((image) => !keepIds.has(image.id))
+        .map((image) => image.id);
       if (removeIds.length > 0) {
-        await manager.delete(OnderhoudOfferteFoto, { id: In(removeIds) });
+        await manager.delete(OnderhoudOfferteImage, { id: In(removeIds) });
       }
       await manager.delete(OnderhoudOfferteTypeLink, { offerteId: id });
       await manager.save(
@@ -180,11 +224,10 @@ export class OnderhoudOffertesService {
         ),
       );
       if (files.length > 0) {
-        await manager.save(this.fotoEntities(manager, id, files, nextSort));
+        await manager.save(this.imageEntities(manager, id, files, nextSort));
       }
       await manager.update(OnderhoudOfferte, id, {
-        ...this.customerFrom(linked ?? dto),
-        klantId: linked ? linked.id : existing.klantId,
+        klantId: linked.id,
       });
     });
 
@@ -194,24 +237,24 @@ export class OnderhoudOffertesService {
   async remove(id: string): Promise<void> {
     await this.loadOfferte(id);
     await this.dataSource.transaction(async (manager) => {
-      await manager.delete(OnderhoudOfferteFoto, { offerteId: id });
+      await manager.delete(OnderhoudOfferteImage, { offerteId: id });
       await manager.delete(OnderhoudOfferteTypeLink, { offerteId: id });
       await manager.delete(OnderhoudOfferte, { id });
     });
   }
 
-  async getFotoBuffer(
+  async getImageBuffer(
     offerteId: string,
-    fotoId: string,
-  ): Promise<OnderhoudOfferteFoto> {
-    const foto = await this.fotos
-      .createQueryBuilder('foto')
-      .addSelect('foto.data')
-      .where('foto.id = :fotoId', { fotoId })
-      .andWhere('foto.offerte_id = :offerteId', { offerteId })
+    imageId: string,
+  ): Promise<OnderhoudOfferteImage> {
+    const image = await this.images
+      .createQueryBuilder('image')
+      .addSelect('image.data')
+      .where('image.id = :imageId', { imageId })
+      .andWhere('image.offerte_id = :offerteId', { offerteId })
       .getOne();
-    if (!foto) throw new NotFoundException('Foto niet gevonden.');
-    return foto;
+    if (!image) throw new NotFoundException('Afbeelding niet gevonden.');
+    return image;
   }
 
   private async linkedKlant(klantId?: string | null): Promise<Klant | null> {
@@ -223,54 +266,32 @@ export class OnderhoudOffertesService {
     return klant;
   }
 
-  private customerFrom(
-    dto:
-      | CreateOnderhoudOfferteDto
-      | AdminCreateOnderhoudOfferteDto
-      | UpdateOnderhoudOfferteDto
-      | Klant,
-  ) {
-    return {
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      phone: dto.phone,
-      street: dto.street,
-      houseNumber: dto.houseNumber,
-      postalCode: normalizePostalCode(dto.postalCode),
-      city: dto.city,
-      note: dto.note?.trim() ? dto.note.trim() : null,
-      consentContact: dto.consentContact,
-      consentTerms: dto.consentTerms,
-    };
-  }
-
-  private assertPhotos(files: UploadedFilePayload[], typeCount: number): void {
-    const max = maxPhotosForTypes(typeCount);
+  private assertImages(files: UploadedFilePayload[], typeCount: number): void {
+    const max = maxImagesForTypes(typeCount);
     if (files.length > max) {
       throw new BadRequestException(
-        `U kunt maximaal ${max} ${max === 1 ? 'foto' : "foto's"} toevoegen bij ${typeCount} ${typeCount === 1 ? 'onderhoudtype' : 'onderhoudtypes'}.`,
+        `U kunt maximaal ${max} ${max === 1 ? 'afbeelding' : 'afbeeldingen'} toevoegen bij ${typeCount} ${typeCount === 1 ? 'onderhoudtype' : 'onderhoudtypes'}.`,
       );
     }
-    this.assertPhotoFiles(files);
+    this.assertImageFiles(files);
   }
 
-  private assertPhotoFiles(files: UploadedFilePayload[]): void {
+  private assertImageFiles(files: UploadedFilePayload[]): void {
     for (const file of files) {
       if (!isAllowedPhoto(file)) {
-        throw new BadRequestException('Kies een foto in jpg, png, webp of heic.');
+        throw new BadRequestException('Kies een afbeelding in jpg, png, webp of heic.');
       }
     }
   }
 
-  private fotoEntities(
+  private imageEntities(
     manager: EntityManager,
     offerteId: string,
     files: UploadedFilePayload[],
     startOrder: number,
-  ): OnderhoudOfferteFoto[] {
+  ): OnderhoudOfferteImage[] {
     return files.map((file, index) =>
-      manager.create(OnderhoudOfferteFoto, {
+      manager.create(OnderhoudOfferteImage, {
         id: randomUUID(),
         offerteId,
         sortOrder: startOrder + index,
@@ -292,7 +313,7 @@ export class OnderhoudOffertesService {
   private async loadOfferte(id: string): Promise<OnderhoudOfferte> {
     const offerte = await this.offertes.findOne({
       where: { id },
-      relations: { fotos: true, typeLinks: { type: true }, klant: true },
+      relations: { images: true, typeLinks: { type: true }, klant: true },
     });
     if (!offerte) throw new NotFoundException('Onderhoudofferte niet gevonden.');
     return offerte;
@@ -302,42 +323,42 @@ export class OnderhoudOffertesService {
     const types = (row.typeLinks ?? [])
       .map((link) => link.type)
       .filter((type): type is OnderhoudType => Boolean(type))
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'nl'))
       .map((type) => ({
         id: type.id,
         name: type.name,
         sortOrder: type.sortOrder,
       }));
 
-    const photos = (row.fotos ?? [])
+    const images = (row.images ?? [])
       .slice()
       .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((foto) => ({
-        id: foto.id,
-        sortOrder: foto.sortOrder,
-        mimeType: foto.mimeType,
-        originalFilename: foto.originalFilename,
-        url: `/onderhoud-offertes/${row.id}/fotos/${foto.id}`,
+      .map((image) => ({
+        id: image.id,
+        sortOrder: image.sortOrder,
+        mimeType: image.mimeType,
+        originalFilename: image.originalFilename,
+        url: `/onderhoud-offertes/${row.id}/images/${image.id}`,
       }));
 
-    const source = row.klant ?? row;
+    const klant = row.klant;
 
     return {
       id: row.id,
       klantId: row.klantId,
-      firstName: source.firstName,
-      lastName: source.lastName,
-      email: source.email,
-      phone: source.phone,
-      street: source.street,
-      houseNumber: source.houseNumber,
-      postalCode: source.postalCode,
-      city: source.city,
-      note: source.note,
-      consentContact: Boolean(source.consentContact),
-      consentTerms: Boolean(source.consentTerms),
       types,
-      photos,
+      firstName: klant?.firstName ?? '',
+      lastName: klant?.lastName ?? '',
+      email: klant?.email ?? '',
+      phone: klant?.phone ?? '',
+      street: klant?.street ?? '',
+      houseNumber: klant?.houseNumber ?? '',
+      postalCode: klant?.postalCode ?? '',
+      city: klant?.city ?? '',
+      note: klant?.note ?? null,
+      consentContact: Boolean(klant?.consentContact),
+      consentTerms: Boolean(klant?.consentTerms),
+      images,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

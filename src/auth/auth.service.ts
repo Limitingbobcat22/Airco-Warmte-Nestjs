@@ -30,7 +30,7 @@ export class AuthService {
       throw new UnauthorizedException('Ongeldige inloggegevens');
     }
 
-    const expiresIn = this.config.get<string>('JWT_EXPIRES_IN') ?? '8h';
+    const expiresIn = this.config.get<string>('JWT_EXPIRES_IN') ?? '48h';
     const accessToken = await this.jwt.signAsync({
       sub: user.id,
       email: user.email,

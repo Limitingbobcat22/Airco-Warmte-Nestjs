@@ -44,7 +44,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-48h}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@airco.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
     depends_on:

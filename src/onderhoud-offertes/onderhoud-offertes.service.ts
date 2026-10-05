@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
@@ -14,6 +15,7 @@ import type { UpdateOnderhoudOfferteDto } from './dto/update-onderhoud-offerte.d
 import { OnderhoudOfferteImage } from './onderhoud-offerte-image.entity';
 import { OnderhoudOfferteTypeLink } from './onderhoud-offerte-type-link.entity';
 import { OnderhoudOfferte } from './onderhoud-offerte.entity';
+import { CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL } from './onderhoud-offerte-overview.sql';
 import {
   isAllowedPhoto,
   photoMimeType,
@@ -92,7 +94,7 @@ function maxImagesForTypes(typeCount: number): number {
 }
 
 @Injectable()
-export class OnderhoudOffertesService {
+export class OnderhoudOffertesService implements OnModuleInit {
   constructor(
     @InjectRepository(OnderhoudOfferte)
     private readonly offertes: Repository<OnderhoudOfferte>,
@@ -104,6 +106,10 @@ export class OnderhoudOffertesService {
     private readonly klanten: Repository<Klant>,
     private readonly dataSource: DataSource,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.dataSource.query(CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL);
+  }
 
   async findAll(): Promise<OnderhoudOfferteOverview[]> {
     const rows: OverviewRow[] = await this.dataSource.query(`

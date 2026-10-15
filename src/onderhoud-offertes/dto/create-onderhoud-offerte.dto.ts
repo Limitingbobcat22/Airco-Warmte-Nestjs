@@ -1,6 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsUUID } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { toIdList, trimString } from '../multipart';
 
 export class CreateOnderhoudOfferteDto {
@@ -16,4 +24,14 @@ export class CreateOnderhoudOfferteDto {
   @ArrayMaxSize(10)
   @IsUUID('all', { each: true })
   typeIds!: string[];
+
+  @ApiPropertyOptional({
+    description: 'Extra informatie over de onderhoudstaken. Leeg wissen mag.',
+    maxLength: 2000,
+  })
+  @Transform(({ value }) => trimString(value))
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000, { message: 'Toelichting is te lang.' })
+  taskNote?: string;
 }

@@ -57,6 +57,10 @@ export class OnderhoudOffertesController {
       properties: {
         klantId: { type: 'string', format: 'uuid' },
         typeIds: { type: 'string', description: 'JSON-array met type-id\'s' },
+        taskNote: {
+          type: 'string',
+          description: 'Extra informatie over de onderhoudstaken',
+        },
         images: { type: 'array', items: { type: 'string', format: 'binary' } },
       },
     },

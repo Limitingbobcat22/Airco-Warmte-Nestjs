@@ -51,6 +51,7 @@ export type OnderhoudOfferteResponse = {
   postalCode: string;
   city: string;
   note: string | null;
+  taskNote: string | null;
   consentContact: boolean;
   consentTerms: boolean;
   types: OnderhoudOfferteTypeResponse[];
@@ -67,6 +68,7 @@ export type OnderhoudOfferteOverview = {
   email: string | null;
   phone: string | null;
   city: string | null;
+  taskNote: string | null;
   typeNames: string | null;
   imageCount: number;
   read: boolean;
@@ -81,6 +83,7 @@ type OverviewRow = {
   email: string | null;
   phone: string | null;
   city: string | null;
+  taskNote: string | null;
   typeNames: string | null;
   imageCount: number | string;
   isRead: boolean | number | string | null;
@@ -101,6 +104,7 @@ function mapOverview(row: OverviewRow): OnderhoudOfferteOverview {
     email: row.email,
     phone: row.phone,
     city: row.city,
+    taskNote: row.taskNote,
     typeNames: row.typeNames,
     imageCount: Number(row.imageCount),
     read: asBoolean(row.isRead),
@@ -117,6 +121,7 @@ const OVERVIEW_SELECT = `
     email,
     phone,
     city,
+    task_note AS taskNote,
     type_names AS typeNames,
     image_count AS imageCount,
     is_read AS isRead,
@@ -124,6 +129,11 @@ const OVERVIEW_SELECT = `
     updated_at AS updatedAt
   FROM onderhoud_offerte_overview
 `;
+
+function emptyToNull(value?: string | null): string | null {
+  const trimmed = value?.trim() ?? '';
+  return trimmed ? trimmed : null;
+}
 
 function uniqueIds(ids: string[]): string[] {
   return [...new Set(ids)];
@@ -149,6 +159,7 @@ export class OnderhoudOffertesService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.ensureReadColumn();
+    await this.ensureNoteColumn();
     await this.dataSource.query(CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL);
   }
 
@@ -184,6 +195,7 @@ export class OnderhoudOffertesService implements OnModuleInit {
         id: randomUUID(),
         klantId: linked.id,
         read: options?.read ?? false,
+        note: emptyToNull(dto.taskNote),
       });
       await manager.save(offerte);
       await manager.save(
@@ -254,6 +266,8 @@ export class OnderhoudOffertesService implements OnModuleInit {
       }
       await manager.update(OnderhoudOfferte, id, {
         klantId: linked.id,
+        note:
+          dto.taskNote === undefined ? existing.note : emptyToNull(dto.taskNote),
       });
     });
 
@@ -367,6 +381,21 @@ export class OnderhoudOffertesService implements OnModuleInit {
     `);
   }
 
+  private async ensureNoteColumn(): Promise<void> {
+    const rows: Array<{ count: number | string }> = await this.dataSource.query(`
+      SELECT COUNT(*) AS count
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'onderhoud_offertes'
+        AND COLUMN_NAME = 'note'
+    `);
+    if (Number(rows[0]?.count) > 0) return;
+    await this.dataSource.query(`
+      ALTER TABLE onderhoud_offertes
+        ADD COLUMN note TEXT NULL AFTER is_read
+    `);
+  }
+
   private async loadOfferte(id: string): Promise<OnderhoudOfferte> {
     const offerte = await this.offertes.findOne({
       where: { id },
@@ -413,6 +442,7 @@ export class OnderhoudOffertesService implements OnModuleInit {
       postalCode: klant?.postalCode ?? '',
       city: klant?.city ?? '',
       note: klant?.note ?? null,
+      taskNote: row.note ?? null,
       consentContact: Boolean(klant?.consentContact),
       consentTerms: Boolean(klant?.consentTerms),
       images,

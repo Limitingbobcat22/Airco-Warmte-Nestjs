@@ -29,6 +29,10 @@ export class OnderhoudOfferte {
   @Column({ name: 'is_read', type: 'tinyint', width: 1, default: 0 })
   read!: boolean;
 
+  /** Extra informatie van de klant over de onderhoudstaken. */
+  @Column({ type: 'text', nullable: true })
+  note!: string | null;
+
   @OneToMany(() => OnderhoudOfferteTypeLink, (link) => link.offerte)
   typeLinks!: OnderhoudOfferteTypeLink[];
 

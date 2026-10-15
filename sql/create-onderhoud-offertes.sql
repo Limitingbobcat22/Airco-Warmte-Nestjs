@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS onderhoud_offertes (
   id CHAR(36) NOT NULL,
   klant_id CHAR(36) NULL,
   is_read TINYINT(1) NOT NULL DEFAULT 0,
+  note TEXT NULL,
   created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
@@ -50,6 +51,7 @@ SELECT
   k.email AS email,
   k.phone AS phone,
   k.city AS city,
+  o.note AS task_note,
   (
     SELECT GROUP_CONCAT(t.name ORDER BY t.sort_order ASC, t.name ASC SEPARATOR ', ')
     FROM onderhoud_offerte_types ot

@@ -14,6 +14,7 @@ SELECT
   k.email AS email,
   k.phone AS phone,
   k.city AS city,
+  o.note AS task_note,
   (
     SELECT GROUP_CONCAT(t.name ORDER BY t.sort_order ASC, t.name ASC SEPARATOR ', ')
     FROM onderhoud_offerte_types ot

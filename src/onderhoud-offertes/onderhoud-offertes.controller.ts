@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Header,
+  Query,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -25,10 +26,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminCreateOnderhoudOfferteDto } from './dto/admin-create-onderhoud-offerte.dto';
 import { CreateOnderhoudOfferteDto } from './dto/create-onderhoud-offerte.dto';
@@ -100,11 +103,12 @@ export class OnderhoudOffertesController {
   @ApiOperation({
     summary: 'Overzicht van onderhoudoffertes uit onderhoud_offerte_overview (admin)',
   })
+  @ApiQuery({ name: 'search', required: false })
   @ApiOkResponse()
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
-  findAll() {
-    return this.offertes.findAll();
+  findAll(@Query() query: SearchQueryDto) {
+    return this.offertes.findAll(query.search);
   }
 
   @Get(':id/images/:imageId')

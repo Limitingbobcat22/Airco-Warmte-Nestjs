@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { QueryFailedError, Repository } from 'typeorm';
+import { applyTextSearch } from '../common/text-search';
 import { DEFAULT_ONDERHOUD_TYPES } from './default-onderhoud-types';
 import type { CreateOnderhoudTypeDto } from './dto/create-onderhoud-type.dto';
 import type { UpdateOnderhoudTypeDto } from './dto/update-onderhoud-type.dto';
@@ -40,10 +41,13 @@ export class OnderhoudTypesService implements OnModuleInit {
     await this.types.save(pending);
   }
 
-  findAll(): Promise<OnderhoudType[]> {
-    return this.types.find({
-      order: { sortOrder: 'ASC', name: 'ASC' },
-    });
+  findAll(search?: string): Promise<OnderhoudType[]> {
+    const qb = this.types
+      .createQueryBuilder('type')
+      .orderBy('type.sortOrder', 'ASC')
+      .addOrderBy('type.name', 'ASC');
+    applyTextSearch(qb, search, ['type.name', 'type.description']);
+    return qb.getMany();
   }
 
   async findOne(id: string): Promise<OnderhoudType> {

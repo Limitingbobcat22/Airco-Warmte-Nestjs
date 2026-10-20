@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Header,
+  Query,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -25,10 +26,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AircosService, MAX_AIRCO_IMAGES } from './aircos.service';
 import { CreateAircoDto } from './dto/create-airco.dto';
@@ -61,11 +64,12 @@ export class AircosController {
 
   @Get()
   @ApiOperation({ summary: 'Lijst alle aircos (publiek)' })
+  @ApiQuery({ name: 'search', required: false })
   @ApiOkResponse({
     description: 'Airco-modellen inclusief foto-metadata',
   })
-  findAll() {
-    return this.aircos.findAll();
+  findAll(@Query() query: SearchQueryDto) {
+    return this.aircos.findAll(query.search);
   }
 
   @Get(':id/images/:imageId')

@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource, Repository } from 'typeorm';
+import { applyTextSearch } from '../common/text-search';
 import { Airco } from '../aircos/airco.entity';
 import { Klant } from '../klanten/klant.entity';
 import type { CreateOfferteDto } from './dto/create-offerte.dto';
@@ -47,10 +48,28 @@ export class OffertesService implements OnModuleInit {
     await this.dataSource.query(CREATE_OFFERTE_OVERZICHT_VIEW_SQL);
   }
 
-  async findAll(): Promise<OfferteViewResponse[]> {
-    const rows = await this.overzicht.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(search?: string): Promise<OfferteViewResponse[]> {
+    const qb = this.overzicht
+      .createQueryBuilder('offerte')
+      .orderBy('offerte.createdAt', 'DESC');
+    applyTextSearch(
+      qb,
+      search,
+      [
+        "CONCAT(offerte.klantFirstName, ' ', offerte.klantLastName)",
+        'offerte.klantEmail',
+        'offerte.klantPhone',
+        'offerte.klantStreet',
+        'offerte.klantHouseNumber',
+        'offerte.klantPostalCode',
+        'offerte.klantCity',
+        'offerte.klantNote',
+        "CONCAT(offerte.aircoBrand, ' ', offerte.aircoModel)",
+        'offerte.aircoUnitType',
+      ],
+      ["REPLACE(offerte.klantPostalCode, ' ', '')"],
+    );
+    const rows = await qb.getMany();
     return rows.map(mapOfferteOverzicht);
   }
 

@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Header,
+  Query,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -25,10 +26,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateHandleidingDto } from './dto/create-handleiding.dto';
 import { UpdateHandleidingDto } from './dto/update-handleiding.dto';
@@ -58,9 +61,10 @@ export class HandleidingenController {
 
   @Get()
   @ApiOperation({ summary: 'Lijst alle handleidingen (publiek)' })
+  @ApiQuery({ name: 'search', required: false })
   @ApiOkResponse({ description: 'Handleidingen-metadata, nieuwste eerst' })
-  findAll() {
-    return this.handleidingen.findAll();
+  findAll(@Query() query: SearchQueryDto) {
+    return this.handleidingen.findAll(query.search);
   }
 
   @Get(':id/file')

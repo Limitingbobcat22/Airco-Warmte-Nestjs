@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Query,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -16,10 +17,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOnderhoudTypeDto } from './dto/create-onderhoud-type.dto';
 import { UpdateOnderhoudTypeDto } from './dto/update-onderhoud-type.dto';
@@ -32,9 +35,10 @@ export class OnderhoudTypesController {
 
   @Get()
   @ApiOperation({ summary: 'Lijst alle onderhoudtypes (publiek)' })
+  @ApiQuery({ name: 'search', required: false })
   @ApiOkResponse({ description: 'Onderhoudtypes, op volgorde' })
-  findAll() {
-    return this.types.findAll();
+  findAll(@Query() query: SearchQueryDto) {
+    return this.types.findAll(query.search);
   }
 
   @Post()

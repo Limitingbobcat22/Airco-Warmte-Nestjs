@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
+import { applyTextSearch } from '../common/text-search';
 import { OffertesService } from '../offertes/offertes.service';
 import type { CreateKlantDto } from './dto/create-klant.dto';
 import type { UpdateKlantDto } from './dto/update-klant.dto';
@@ -23,10 +24,26 @@ export class KlantenService {
     private readonly offertes: OffertesService,
   ) {}
 
-  async findAll(): Promise<Klant[]> {
-    return this.klanten.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(search?: string): Promise<Klant[]> {
+    const qb = this.klanten
+      .createQueryBuilder('klant')
+      .orderBy('klant.createdAt', 'DESC');
+    applyTextSearch(
+      qb,
+      search,
+      [
+        "CONCAT(klant.firstName, ' ', klant.lastName)",
+        'klant.email',
+        'klant.phone',
+        'klant.street',
+        'klant.houseNumber',
+        'klant.postalCode',
+        'klant.city',
+        'klant.note',
+      ],
+      ["REPLACE(klant.postalCode, ' ', '')"],
+    );
+    return qb.getMany();
   }
 
   async findOne(id: string): Promise<Klant> {

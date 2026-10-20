@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Query,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -16,10 +17,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateKlantDto } from './dto/create-klant.dto';
 import { UpdateKlantDto } from './dto/update-klant.dto';
@@ -43,11 +46,12 @@ export class KlantenController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Lijst alle klanten (admin)' })
+  @ApiQuery({ name: 'search', required: false })
   @ApiOkResponse({ description: 'Klanten, nieuwste eerst' })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
-  findAll() {
-    return this.klanten.findAll();
+  findAll(@Query() query: SearchQueryDto) {
+    return this.klanten.findAll(query.search);
   }
 
   @Get(':id')

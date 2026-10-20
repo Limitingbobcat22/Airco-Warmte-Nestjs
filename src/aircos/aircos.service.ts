@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
+import { applyTextSearch } from '../common/text-search';
 import { AircoImage } from './airco-image.entity';
 import { Airco } from './airco.entity';
 import type { CreateAircoDto } from './dto/create-airco.dto';
@@ -46,11 +47,35 @@ export class AircosService {
     private readonly images: Repository<AircoImage>,
   ) {}
 
-  async findAll(): Promise<AircoResponse[]> {
-    const rows = await this.aircos.find({
-      relations: { images: true },
-      order: { brand: 'ASC', model: 'ASC' },
-    });
+  async findAll(search?: string): Promise<AircoResponse[]> {
+    const qb = this.aircos
+      .createQueryBuilder('airco')
+      .leftJoinAndSelect('airco.images', 'image')
+      .orderBy('airco.brand', 'ASC')
+      .addOrderBy('airco.model', 'ASC')
+      .addOrderBy('image.sortOrder', 'ASC');
+    applyTextSearch(qb, search, [
+      "CONCAT(airco.brand, ' ', airco.model)",
+      'airco.unitType',
+      'airco.tag',
+      'airco.description',
+      'airco.productFunction',
+      'airco.roomM2',
+      'airco.energyClassCooling',
+      'airco.energyClassHeating',
+      'airco.netSizeInside',
+      'airco.netSizeOutside',
+      'airco.refrigerant',
+      'CAST(airco.coolingKw AS CHAR)',
+      'CAST(airco.heatingKw AS CHAR)',
+      'CAST(airco.priceEur AS CHAR)',
+      'CAST(airco.quantity AS CHAR)',
+      'CAST(airco.seer AS CHAR)',
+      'CAST(airco.scop AS CHAR)',
+      'CAST(airco.noiseDbaInside AS CHAR)',
+      'CAST(airco.noiseDbaOutside AS CHAR)',
+    ]);
+    const rows = await qb.getMany();
     return rows.map((row) => this.toResponse(row));
   }
 

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { applyTextSearch } from '../common/text-search';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
@@ -25,10 +26,25 @@ export class HandleidingenService {
     private readonly handleidingen: Repository<Handleiding>,
   ) {}
 
-  async findAll(): Promise<HandleidingResponse[]> {
-    const rows = await this.handleidingen.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(search?: string): Promise<HandleidingResponse[]> {
+    const qb = this.handleidingen
+      .createQueryBuilder('handleiding')
+      .select([
+        'handleiding.id',
+        'handleiding.title',
+        'handleiding.description',
+        'handleiding.originalFilename',
+        'handleiding.mimeType',
+        'handleiding.createdAt',
+        'handleiding.updatedAt',
+      ])
+      .orderBy('handleiding.createdAt', 'DESC');
+    applyTextSearch(qb, search, [
+      'handleiding.title',
+      'handleiding.description',
+      'handleiding.originalFilename',
+    ]);
+    const rows = await qb.getMany();
     return rows.map((row) => this.toResponse(row));
   }
 

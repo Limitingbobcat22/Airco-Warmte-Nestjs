@@ -16,6 +16,10 @@ import type { UpdateOnderhoudOfferteReadDto } from './dto/update-onderhoud-offer
 import { OnderhoudOfferteImage } from './onderhoud-offerte-image.entity';
 import { OnderhoudOfferteTypeLink } from './onderhoud-offerte-type-link.entity';
 import { OnderhoudOfferte } from './onderhoud-offerte.entity';
+import {
+  compactLikePattern,
+  likePattern,
+} from '../common/text-search';
 import { CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL } from './onderhoud-offerte-overview.sql';
 import {
   isAllowedPhoto,
@@ -163,9 +167,50 @@ export class OnderhoudOffertesService implements OnModuleInit {
     await this.dataSource.query(CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL);
   }
 
-  async findAll(): Promise<OnderhoudOfferteOverview[]> {
+  async findAll(search?: string): Promise<OnderhoudOfferteOverview[]> {
+    const pattern = likePattern(search);
+    if (!pattern) {
+      const rows: OverviewRow[] = await this.dataSource.query(
+        `${OVERVIEW_SELECT} ORDER BY created_at DESC`,
+      );
+      return rows.map(mapOverview);
+    }
+
+    const compact = compactLikePattern(search) ?? pattern;
     const rows: OverviewRow[] = await this.dataSource.query(
-      `${OVERVIEW_SELECT} ORDER BY created_at DESC`,
+      `${OVERVIEW_SELECT}
+       WHERE (
+         name LIKE ? ESCAPE '\\\\'
+         OR email LIKE ? ESCAPE '\\\\'
+         OR phone LIKE ? ESCAPE '\\\\'
+         OR city LIKE ? ESCAPE '\\\\'
+         OR task_note LIKE ? ESCAPE '\\\\'
+         OR type_names LIKE ? ESCAPE '\\\\'
+         OR klant_id IN (
+           SELECT id FROM klanten
+           WHERE street LIKE ? ESCAPE '\\\\'
+              OR house_number LIKE ? ESCAPE '\\\\'
+              OR postal_code LIKE ? ESCAPE '\\\\'
+              OR REPLACE(postal_code, ' ', '') LIKE ? ESCAPE '\\\\'
+              OR note LIKE ? ESCAPE '\\\\'
+              OR CONCAT(first_name, ' ', last_name) LIKE ? ESCAPE '\\\\'
+         )
+       )
+       ORDER BY created_at DESC`,
+      [
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        compact,
+        pattern,
+        pattern,
+      ],
     );
     return rows.map(mapOverview);
   }

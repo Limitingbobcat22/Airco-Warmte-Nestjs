@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Put,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +24,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { ExportQueryDto } from '../common/dto/export-query.dto';
+import { excelDownload } from '../common/excel-export';
 import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOfferteDto } from './dto/create-offerte.dto';
@@ -58,6 +61,19 @@ export class OffertesController {
   @ApiForbiddenResponse()
   findAll(@Query() query: SearchQueryDto) {
     return this.offertes.findAll(query.search);
+  }
+
+  @Get('export')
+  @ApiOperation({
+    summary:
+      'Exporteer offertes naar Excel (admin). Zelfde zoekfilter en kolommen als de tabel.',
+  })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'columns', required: false })
+  @ApiOkResponse({ description: 'Excel-bestand' })
+  async exportExcel(@Query() query: ExportQueryDto): Promise<StreamableFile> {
+    const file = await this.offertes.exportExcel(query.search, query.columns);
+    return excelDownload(file, 'offertes');
   }
 
   @Get(':id')

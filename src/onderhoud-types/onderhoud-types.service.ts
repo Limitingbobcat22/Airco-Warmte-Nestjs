@@ -8,6 +8,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { QueryFailedError, Repository } from 'typeorm';
 import { applyTextSearch } from '../common/text-search';
+import {
+  type ExcelColumn,
+  selectExportColumns,
+  textOrDash,
+  workbookBuffer,
+} from '../common/excel-export';
 import { DEFAULT_ONDERHOUD_TYPES } from './default-onderhoud-types';
 import type { CreateOnderhoudTypeDto } from './dto/create-onderhoud-type.dto';
 import type { UpdateOnderhoudTypeDto } from './dto/update-onderhoud-type.dto';
@@ -48,6 +54,25 @@ export class OnderhoudTypesService implements OnModuleInit {
       .addOrderBy('type.name', 'ASC');
     applyTextSearch(qb, search, ['type.name', 'type.description']);
     return qb.getMany();
+  }
+
+  async exportExcel(search?: string, columns?: string[]): Promise<Buffer> {
+    const rows = await this.findAll(search);
+    const tableColumns: ExcelColumn[] = [
+      { header: 'Volgorde', key: 'sortOrder', width: 12 },
+      { header: 'Type', key: 'name', width: 28 },
+      { header: 'Handelingen', key: 'description', width: 48 },
+    ];
+
+    return workbookBuffer(
+      'Onderhoudtypes',
+      selectExportColumns(tableColumns, columns),
+      rows.map((row) => ({
+        sortOrder: row.sortOrder,
+        name: row.name,
+        description: textOrDash(row.description),
+      })),
+    );
   }
 
   async findOne(id: string): Promise<OnderhoudType> {

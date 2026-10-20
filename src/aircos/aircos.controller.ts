@@ -31,6 +31,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { ExportQueryDto } from '../common/dto/export-query.dto';
+import { excelDownload } from '../common/excel-export';
 import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AircosService, MAX_AIRCO_IMAGES } from './aircos.service';
@@ -70,6 +72,23 @@ export class AircosController {
   })
   findAll(@Query() query: SearchQueryDto) {
     return this.aircos.findAll(query.search);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Exporteer aircos naar Excel (admin). Zelfde zoekfilter en kolommen als de tabel.',
+  })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'columns', required: false })
+  @ApiOkResponse({ description: 'Excel-bestand' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  async exportExcel(@Query() query: ExportQueryDto): Promise<StreamableFile> {
+    const file = await this.aircos.exportExcel(query.search, query.columns);
+    return excelDownload(file, 'aircos');
   }
 
   @Get(':id/images/:imageId')

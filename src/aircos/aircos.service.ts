@@ -7,6 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { applyTextSearch } from '../common/text-search';
+import {
+  type ExcelColumn,
+  asNumber,
+  formatEurPrice,
+  formatMeasure,
+  selectExportColumns,
+  workbookBuffer,
+} from '../common/excel-export';
 import { AircoImage } from './airco-image.entity';
 import { Airco } from './airco.entity';
 import type { CreateAircoDto } from './dto/create-airco.dto';
@@ -77,6 +85,57 @@ export class AircosService {
     ]);
     const rows = await qb.getMany();
     return rows.map((row) => this.toResponse(row));
+  }
+
+  async exportExcel(search?: string, columns?: string[]): Promise<Buffer> {
+    const rows = await this.findAll(search);
+    const tableColumns: ExcelColumn[] = [
+      { header: 'Merk', key: 'brand', width: 18 },
+      { header: 'Model', key: 'model', width: 22 },
+      { header: 'Koel vermogen (kW)', key: 'coolingKw', width: 20 },
+      { header: 'Verwarm vermogen (kW)', key: 'heatingKw', width: 22 },
+      { header: 'Prijs', key: 'priceEur', width: 14 },
+      { header: 'Voorraad', key: 'quantity', width: 12 },
+      { header: 'Tag', key: 'tag', width: 16 },
+      { header: 'Type', key: 'unitType', width: 22 },
+      { header: 'Functie', key: 'productFunction', width: 24 },
+      { header: 'Ruimte', key: 'roomM2', width: 14 },
+      { header: 'SEER', key: 'seer', width: 10 },
+      { header: 'SCOP', key: 'scop', width: 10 },
+      { header: 'Label koelen', key: 'energyClassCooling', width: 14 },
+      { header: 'Label verwarmen', key: 'energyClassHeating', width: 16 },
+      { header: 'Geluid binnen', key: 'noiseDbaInside', width: 16 },
+      { header: 'Geluid buiten', key: 'noiseDbaOutside', width: 16 },
+      { header: 'Afmeting binnen', key: 'netSizeInside', width: 20 },
+      { header: 'Afmeting buiten', key: 'netSizeOutside', width: 20 },
+      { header: 'Koudemiddel', key: 'refrigerant', width: 16 },
+    ];
+
+    return workbookBuffer(
+      'Aircos',
+      selectExportColumns(tableColumns, columns),
+      rows.map((airco) => ({
+        brand: airco.brand,
+        model: airco.model,
+        coolingKw: formatMeasure(airco.coolingKw, 1, ''),
+        heatingKw: formatMeasure(airco.heatingKw, 1, ''),
+        priceEur: formatEurPrice(airco.priceEur),
+        quantity: asNumber(airco.quantity) ?? 0,
+        tag: airco.tag,
+        unitType: airco.unitType,
+        productFunction: airco.productFunction,
+        roomM2: airco.roomM2,
+        seer: formatMeasure(airco.seer, 2, ''),
+        scop: formatMeasure(airco.scop, 2, ''),
+        energyClassCooling: airco.energyClassCooling,
+        energyClassHeating: airco.energyClassHeating,
+        noiseDbaInside: formatMeasure(airco.noiseDbaInside, null, ' dB(A)'),
+        noiseDbaOutside: formatMeasure(airco.noiseDbaOutside, null, ' dB(A)'),
+        netSizeInside: airco.netSizeInside,
+        netSizeOutside: airco.netSizeOutside,
+        refrigerant: airco.refrigerant,
+      })),
+    );
   }
 
   async findOne(id: string): Promise<AircoResponse> {

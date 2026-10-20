@@ -20,6 +20,15 @@ import {
   compactLikePattern,
   likePattern,
 } from '../common/text-search';
+import {
+  type ExcelColumn,
+  formatExportDateTime,
+  formatReadStatus,
+  formatYesNo,
+  selectExportColumns,
+  textOrDash,
+  workbookBuffer,
+} from '../common/excel-export';
 import { CREATE_ONDERHOUD_OFFERTE_OVERVIEW_VIEW_SQL } from './onderhoud-offerte-overview.sql';
 import {
   isAllowedPhoto,
@@ -213,6 +222,61 @@ export class OnderhoudOffertesService implements OnModuleInit {
       ],
     );
     return rows.map(mapOverview);
+  }
+
+  async exportExcel(search?: string, columns?: string[]): Promise<Buffer> {
+    const rows = await this.findAll(search);
+    const klantIds = rows
+      .map((row) => row.klantId)
+      .filter((id): id is string => Boolean(id));
+    const klanten = klantIds.length
+      ? await this.klanten.find({ where: { id: In(klantIds) } })
+      : [];
+    const klantById = new Map(klanten.map((klant) => [klant.id, klant]));
+    const tableColumns: ExcelColumn[] = [
+      { header: 'Status', key: 'read', width: 14 },
+      { header: 'Naam', key: 'name', width: 28 },
+      { header: 'E-mail', key: 'email', width: 32 },
+      { header: 'Telefoon', key: 'phone', width: 18, text: true },
+      { header: 'Straat', key: 'street', width: 24 },
+      { header: 'Huisnummer', key: 'houseNumber', width: 14, text: true },
+      { header: 'Woonplaats', key: 'city', width: 18 },
+      { header: 'Postcode', key: 'postalCode', width: 12, text: true },
+      { header: 'Opmerking', key: 'note', width: 32 },
+      { header: 'Contact', key: 'consentContact', width: 12 },
+      { header: 'Voorwaarden', key: 'consentTerms', width: 14 },
+      { header: 'Toelichting', key: 'taskNote', width: 32 },
+      { header: 'Types', key: 'typeNames', width: 28 },
+      { header: "Foto's", key: 'imageCount', width: 10 },
+      { header: 'Aangemaakt', key: 'createdAt', width: 20 },
+      { header: 'Gewijzigd', key: 'updatedAt', width: 20 },
+    ];
+
+    return workbookBuffer(
+      'Onderhoud-offertes',
+      selectExportColumns(tableColumns, columns),
+      rows.map((row) => {
+        const klant = row.klantId ? klantById.get(row.klantId) : undefined;
+        return {
+          read: formatReadStatus(row.read),
+          name: textOrDash(row.name),
+          email: textOrDash(row.email),
+          phone: textOrDash(row.phone),
+          street: textOrDash(klant?.street),
+          houseNumber: textOrDash(klant?.houseNumber),
+          city: textOrDash(row.city),
+          postalCode: textOrDash(klant?.postalCode),
+          note: textOrDash(klant?.note),
+          consentContact: klant ? formatYesNo(klant.consentContact) : '–',
+          consentTerms: klant ? formatYesNo(klant.consentTerms) : '–',
+          taskNote: textOrDash(row.taskNote),
+          typeNames: textOrDash(row.typeNames),
+          imageCount: row.imageCount,
+          createdAt: formatExportDateTime(row.createdAt),
+          updatedAt: formatExportDateTime(row.updatedAt),
+        };
+      }),
+    );
   }
 
   async findOne(id: string): Promise<OnderhoudOfferteResponse> {

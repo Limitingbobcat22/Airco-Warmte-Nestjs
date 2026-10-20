@@ -1,5 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { applyTextSearch } from '../common/text-search';
+import {
+  type ExcelColumn,
+  formatExportDateTime,
+  selectExportColumns,
+  textOrDash,
+  workbookBuffer,
+} from '../common/excel-export';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
@@ -46,6 +53,27 @@ export class HandleidingenService {
     ]);
     const rows = await qb.getMany();
     return rows.map((row) => this.toResponse(row));
+  }
+
+  async exportExcel(search?: string, columns?: string[]): Promise<Buffer> {
+    const rows = await this.findAll(search);
+    const tableColumns: ExcelColumn[] = [
+      { header: 'Titel', key: 'title', width: 32 },
+      { header: 'Beschrijving', key: 'description', width: 40 },
+      { header: 'Bestand', key: 'originalFilename', width: 32 },
+      { header: 'Geüpload', key: 'createdAt', width: 20 },
+    ];
+
+    return workbookBuffer(
+      'Handleidingen',
+      selectExportColumns(tableColumns, columns),
+      rows.map((row) => ({
+        title: row.title,
+        description: textOrDash(row.description),
+        originalFilename: row.originalFilename,
+        createdAt: formatExportDateTime(row.createdAt),
+      })),
+    );
   }
 
   async findOne(id: string): Promise<HandleidingResponse> {

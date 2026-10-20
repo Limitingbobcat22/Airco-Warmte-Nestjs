@@ -8,6 +8,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { DataSource, Repository } from 'typeorm';
 import { applyTextSearch } from '../common/text-search';
+import {
+  type ExcelColumn,
+  formatEurExact,
+  formatEurWhole,
+  formatExportDateTime,
+  formatMeasure,
+  formatReadStatus,
+  selectExportColumns,
+  textOrDash,
+  workbookBuffer,
+} from '../common/excel-export';
 import { Airco } from '../aircos/airco.entity';
 import { Klant } from '../klanten/klant.entity';
 import type { CreateOfferteDto } from './dto/create-offerte.dto';
@@ -71,6 +82,51 @@ export class OffertesService implements OnModuleInit {
     );
     const rows = await qb.getMany();
     return rows.map(mapOfferteOverzicht);
+  }
+
+  async exportExcel(search?: string, columns?: string[]): Promise<Buffer> {
+    const rows = await this.findAll(search);
+    const tableColumns: ExcelColumn[] = [
+      { header: 'Status', key: 'read', width: 14 },
+      { header: 'Klant', key: 'name', width: 28 },
+      { header: 'E-mail', key: 'email', width: 32 },
+      { header: 'Airco', key: 'airco', width: 28 },
+      { header: 'Koel vermogen', key: 'coolingKw', width: 16 },
+      { header: 'Oppervlakte', key: 'areaM2', width: 14 },
+      { header: 'Hoogte', key: 'heightM', width: 12 },
+      { header: 'Aandeel airco', key: 'heatingSharePct', width: 16 },
+      { header: 'Aanbevolen vermogen', key: 'requiredKw', width: 22 },
+      { header: 'Gasverbruik', key: 'yearlyGasM3', width: 14 },
+      { header: 'Gasprijs', key: 'gasPriceEur', width: 16 },
+      { header: 'Stroomprijs', key: 'elecPriceEur', width: 16 },
+      { header: 'Voordeel / jaar', key: 'netEuroSavedYearly', width: 18 },
+      { header: 'Aangevraagd', key: 'createdAt', width: 20 },
+    ];
+
+    return workbookBuffer(
+      'Offertes',
+      selectExportColumns(tableColumns, columns),
+      rows.map((offerte) => ({
+        read: formatReadStatus(offerte.read),
+        name: offerte.klant
+          ? `${offerte.klant.firstName} ${offerte.klant.lastName}`.trim()
+          : 'Klant verwijderd',
+        email: textOrDash(offerte.klant?.email),
+        airco: offerte.airco
+          ? `${offerte.airco.brand} ${offerte.airco.model}`.trim()
+          : '–',
+        coolingKw: formatMeasure(offerte.airco?.coolingKw, 1, ' kW'),
+        areaM2: formatMeasure(offerte.areaM2, null, ' m²'),
+        heightM: formatMeasure(offerte.heightM, 1, ' m'),
+        heatingSharePct: formatMeasure(offerte.heatingSharePct, null, '%'),
+        requiredKw: formatMeasure(offerte.requiredKw, 1, ' kW'),
+        yearlyGasM3: formatMeasure(offerte.yearlyGasM3, null, ' m³'),
+        gasPriceEur: formatEurExact(offerte.gasPriceEur, '/m³'),
+        elecPriceEur: formatEurExact(offerte.elecPriceEur, '/kWh'),
+        netEuroSavedYearly: formatEurWhole(offerte.netEuroSavedYearly),
+        createdAt: formatExportDateTime(offerte.createdAt),
+      })),
+    );
   }
 
   async findOne(id: string): Promise<OfferteViewResponse> {

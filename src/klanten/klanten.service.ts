@@ -3,10 +3,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { applyTextSearch } from '../common/text-search';
+import {
+  type ExcelColumn,
+  formatExportDateTime,
+  formatYesNo,
+  selectExportColumns,
+  workbookBuffer,
+} from '../common/excel-export';
 import { OffertesService } from '../offertes/offertes.service';
 import type { CreateKlantDto } from './dto/create-klant.dto';
 import type { UpdateKlantDto } from './dto/update-klant.dto';
 import { Klant } from './klant.entity';
+
+const KLANT_COLUMNS: ExcelColumn[] = [
+  { header: 'Naam', key: 'name', width: 28 },
+  { header: 'E-mail', key: 'email', width: 32 },
+  { header: 'Telefoon', key: 'phone', width: 18, text: true },
+  { header: 'Woonplaats', key: 'city', width: 22 },
+  { header: 'Voorwaarden', key: 'consentTerms', width: 16 },
+  { header: 'Aangemaakt', key: 'createdAt', width: 20 },
+];
 
 function normalizePostalCode(value: string): string {
   const compact = value.replace(/\s+/g, '').toUpperCase();
@@ -44,6 +60,23 @@ export class KlantenService {
       ["REPLACE(klant.postalCode, ' ', '')"],
     );
     return qb.getMany();
+  }
+
+  exportExcel(search?: string, columns?: string[]): Promise<Buffer> {
+    return this.findAll(search).then((rows) =>
+      workbookBuffer(
+        'Klanten',
+        selectExportColumns(KLANT_COLUMNS, columns),
+        rows.map((klant) => ({
+          name: `${klant.firstName} ${klant.lastName}`.trim(),
+          email: klant.email,
+          phone: klant.phone,
+          city: klant.city,
+          consentTerms: formatYesNo(klant.consentTerms),
+          createdAt: formatExportDateTime(klant.createdAt),
+        })),
+      ),
+    );
   }
 
   async findOne(id: string): Promise<Klant> {

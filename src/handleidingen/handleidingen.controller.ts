@@ -31,6 +31,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { ExportQueryDto } from '../common/dto/export-query.dto';
+import { excelDownload } from '../common/excel-export';
 import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateHandleidingDto } from './dto/create-handleiding.dto';
@@ -65,6 +67,26 @@ export class HandleidingenController {
   @ApiOkResponse({ description: 'Handleidingen-metadata, nieuwste eerst' })
   findAll(@Query() query: SearchQueryDto) {
     return this.handleidingen.findAll(query.search);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Exporteer handleidingen naar Excel (admin). Zelfde zoekfilter als de lijst.',
+  })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'columns', required: false })
+  @ApiOkResponse({ description: 'Excel-bestand' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  async exportExcel(@Query() query: ExportQueryDto): Promise<StreamableFile> {
+    const file = await this.handleidingen.exportExcel(
+      query.search,
+      query.columns,
+    );
+    return excelDownload(file, 'handleidingen');
   }
 
   @Get(':id/file')

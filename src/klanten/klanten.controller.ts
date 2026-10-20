@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -22,6 +23,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { ExportQueryDto } from '../common/dto/export-query.dto';
+import { excelDownload } from '../common/excel-export';
 import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateKlantDto } from './dto/create-klant.dto';
@@ -52,6 +55,23 @@ export class KlantenController {
   @ApiForbiddenResponse()
   findAll(@Query() query: SearchQueryDto) {
     return this.klanten.findAll(query.search);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Exporteer klanten naar Excel (admin). Zelfde zoekfilter als de lijst.',
+  })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'columns', required: false })
+  @ApiOkResponse({ description: 'Excel-bestand met de kolommen van de klantentabel' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  async exportExcel(@Query() query: ExportQueryDto): Promise<StreamableFile> {
+    const file = await this.klanten.exportExcel(query.search, query.columns);
+    return excelDownload(file, 'klanten');
   }
 
   @Get(':id')

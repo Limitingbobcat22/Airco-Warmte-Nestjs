@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -22,6 +23,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
+import { ExportQueryDto } from '../common/dto/export-query.dto';
+import { excelDownload } from '../common/excel-export';
 import { SearchQueryDto } from '../common/dto/search-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOnderhoudTypeDto } from './dto/create-onderhoud-type.dto';
@@ -39,6 +42,23 @@ export class OnderhoudTypesController {
   @ApiOkResponse({ description: 'Onderhoudtypes, op volgorde' })
   findAll(@Query() query: SearchQueryDto) {
     return this.types.findAll(query.search);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Exporteer onderhoudtypes naar Excel (admin). Zelfde zoekfilter als de lijst.',
+  })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'columns', required: false })
+  @ApiOkResponse({ description: 'Excel-bestand' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  async exportExcel(@Query() query: ExportQueryDto): Promise<StreamableFile> {
+    const file = await this.types.exportExcel(query.search, query.columns);
+    return excelDownload(file, 'onderhoud-types');
   }
 
   @Post()
